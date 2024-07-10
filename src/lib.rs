@@ -7,4 +7,5 @@ pub mod index_set;
 pub mod object_pool;
 pub mod simulated_annealing;
 pub mod tsp;
+#[allow(unused)]
 pub mod utility;
