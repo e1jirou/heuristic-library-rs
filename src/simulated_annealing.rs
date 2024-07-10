@@ -7,7 +7,6 @@ use rand_pcg::Pcg64Mcg;
 const SA_TIME_COUNTS: usize = 1 << 4;
 const SA_RANDOM_STEPS: usize = 1 << 12;
 
-#[allow(unused)]
 pub enum SchedulerType {
     Exponential,
     Linear,
@@ -26,7 +25,6 @@ pub struct SimulatedAnnealingScheduler {
 }
 
 impl SimulatedAnnealingScheduler {
-    #[allow(unused)]
     pub fn new(
         schedule_type: SchedulerType,
         t_first: f64,
@@ -54,7 +52,6 @@ impl SimulatedAnnealingScheduler {
         }
     }
 
-    #[allow(unused)]
     pub fn accept(&mut self, profit: f64) -> bool {
         profit >= 0.0 || profit > self.get_threshold()
     }
