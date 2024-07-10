@@ -1,4 +1,5 @@
 pub mod articulation_point;
+#[allow(unused)]
 pub mod beam_search;
 pub mod erasable_priority_queue;
 pub mod geometry;
