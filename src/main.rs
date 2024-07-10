@@ -1,6 +1,3 @@
-mod beam_search; // delete before submission
-mod utility; // delete before submission
-
 use proconio::input;
 use std::process::exit;
 

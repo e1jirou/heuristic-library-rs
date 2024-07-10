@@ -1,8 +1,5 @@
 use std::collections::HashMap;
 
-// --------------------------------------
-// Beam Search Library
-
 pub type Cost = i32;
 pub type Hash = u64;
 
@@ -426,5 +423,3 @@ pub fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
 
     unreachable!();
 }
-
-// --------------------------------------
