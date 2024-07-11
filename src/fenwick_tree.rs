@@ -40,7 +40,7 @@ impl FenwickTree {
     pub fn bisect(&self, x: T) -> usize {
         let mut s = 0;
         let mut p = 0;
-        for i in (0..(64 - self.n.leading_zeros())).rev() {
+        for i in (0..(64 - (self.n as u64).leading_zeros())).rev() {
             let q = p | (1 << i);
             if q > self.n {
                 continue;
