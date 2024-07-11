@@ -7,7 +7,7 @@ pub struct FenwickTree {
 }
 
 impl FenwickTree {
-    pub fn new(n: usize) -> FenwickTree {
+    pub fn new(n: usize) -> Self {
         FenwickTree {
             n,
             data: vec![T::default(); n],
