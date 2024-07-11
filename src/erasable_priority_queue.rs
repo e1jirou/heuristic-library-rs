@@ -58,7 +58,7 @@ pub struct DoubleEndedPriorityQueue<T> {
     max_queue: ErasablePriorityQueue<T>,
 }
 
-impl <T: Copy + Ord> DoubleEndedPriorityQueue<T> {
+impl <T: Clone + Ord> DoubleEndedPriorityQueue<T> {
     pub fn new() -> Self {
         DoubleEndedPriorityQueue {
             min_queue: ErasablePriorityQueue::new(),
@@ -78,12 +78,12 @@ impl <T: Copy + Ord> DoubleEndedPriorityQueue<T> {
     }
 
     pub fn push(&mut self, item: T) {
-        self.min_queue.push(std::cmp::Reverse(item));
+        self.min_queue.push(std::cmp::Reverse(item.clone()));
         self.max_queue.push(item);
     }
 
     pub fn erase(&mut self, item: T) {
-        self.min_queue.erase(std::cmp::Reverse(item));
+        self.min_queue.erase(std::cmp::Reverse(item.clone()));
         self.max_queue.erase(item);
     }
 
