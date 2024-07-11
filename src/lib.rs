@@ -7,6 +7,7 @@ pub mod fenwick_tree;
 pub mod geometry;
 pub mod index_set;
 pub mod object_pool;
+pub mod segment_tree;
 pub mod simulated_annealing;
 pub mod tsp;
 #[allow(unused)]
