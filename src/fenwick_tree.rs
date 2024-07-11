@@ -1,6 +1,5 @@
 type T = i32;
 
-#[derive(Debug)]
 pub struct FenwickTree {
     n: usize,
     data: Vec<T>
