@@ -52,7 +52,7 @@ pub struct SegmentTree {
 
 impl SegmentTree {
     fn new(n: usize) -> SegmentTree {
-        let log = 64 - n.saturating_sub(1).leading_zeros() as usize;
+        let log = 64 - (n as u64).saturating_sub(1).leading_zeros() as usize;
         let size = 1 << log;
         SegmentTree {
             n,
