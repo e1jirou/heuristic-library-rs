@@ -2,6 +2,7 @@ type T = i32;
 
 pub struct FenwickTree {
     n: usize,
+    log: usize,
     data: Vec<T>
 }
 
@@ -9,6 +10,7 @@ impl FenwickTree {
     pub fn new(n: usize) -> Self {
         FenwickTree {
             n,
+            log: (64 - (n as u64).leading_zeros()) as usize,
             data: vec![T::default(); n],
         }
     }
@@ -40,7 +42,7 @@ impl FenwickTree {
     pub fn bisect(&self, x: T) -> usize {
         let mut s = 0;
         let mut p = 0;
-        for i in (0..(64 - (self.n as u64).leading_zeros())).rev() {
+        for i in (0..self.log).rev() {
             let q = p | (1 << i);
             if q > self.n {
                 continue;
@@ -52,5 +54,26 @@ impl FenwickTree {
             }
         }
         p
+    }
+
+    pub fn min_right(&self, l: usize) -> Option<usize> {
+        debug_assert!(l <= self.n);
+        let s = self.sum_left(l);
+        let i = self.bisect(s + 1);
+        if i == self.n {
+            None
+        } else {
+            Some(i)
+        }
+    }
+
+    pub fn max_left(&self, r: usize) -> Option<usize> {
+        debug_assert!(r <= self.n);
+        let s = self.sum_left(r);
+        if s == 0 {
+            None
+        } else {
+            Some(self.bisect(s))
+        }
     }
 }
