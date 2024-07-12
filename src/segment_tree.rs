@@ -4,20 +4,6 @@ pub trait Monoid {
     fn op(a: &Self::S, b: &Self::S) -> Self::S;
 }
 
-// struct MinMonoid;
-
-// impl Monoid for MinMonoid {
-//     type S = i32;
-
-//     fn e() -> Self::S {
-//         Self::S::MAX
-//     }
-
-//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
-//         *a.min(b)
-//     }
-// }
-
 pub struct SegmentTree<M: Monoid> {
     n: usize,
     size: usize,
@@ -158,3 +144,17 @@ impl <M: Monoid> SegmentTree<M> {
         self.d[k] = M::op(&self.d[2 * k], &self.d[2 * k + 1]);
     }
 }
+
+// struct MinMonoid;
+
+// impl Monoid for MinMonoid {
+//     type S = i32;
+
+//     fn e() -> Self::S {
+//         Self::S::MAX
+//     }
+
+//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
+//         *a.min(b)
+//     }
+// }
