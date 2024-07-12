@@ -2,12 +2,13 @@ use crate::utility::ChangeMinMax;
 
 // calculate the TSP optimal solution
 // start from the last vertex (and end to the last vertex)
-pub fn solve_tsp(cost_matrix: &Vec<Vec<i64>>, back_to_the_start_point: bool) -> Vec<usize> {
+type Cost = i64;
+pub fn solve_tsp(cost_matrix: &Vec<Vec<Cost>>, back_to_the_start_point: bool) -> Vec<usize> {
     if cost_matrix.len() == 1 {
         return vec![0];
     }
     let n = cost_matrix.len() - 1;
-    let inf = i64::max_value() / 2;
+    let inf = Cost::max_value() / 2;
 
     // dp
     let mut dp = vec![vec![inf; 1 << n]; n];
