@@ -1,17 +1,15 @@
-type T = i32;
-
-pub struct FenwickTree {
+pub struct FenwickTree<T> {
     n: usize,
     log: usize,
     data: Vec<T>
 }
 
-impl FenwickTree {
+impl<T: num_traits::NumAssign + num_traits::PrimInt> FenwickTree<T> {
     pub fn new(n: usize) -> Self {
         FenwickTree {
             n,
             log: (64 - (n as u64).leading_zeros()) as usize,
-            data: vec![T::default(); n],
+            data: vec![T::zero(); n],
         }
     }
 
@@ -31,7 +29,7 @@ impl FenwickTree {
 
     pub fn sum_left(&self, mut r: usize) -> T {
         debug_assert!(r <= self.n);
-        let mut s = 0;
+        let mut s = T::zero();
         while r > 0 {
             s += self.data[r - 1];
             r -= r & (!r + 1);
@@ -40,7 +38,7 @@ impl FenwickTree {
     }
 
     pub fn bisect(&self, x: T) -> usize {
-        let mut s = 0;
+        let mut s = T::zero();
         let mut p = 0;
         for i in (0..self.log).rev() {
             let q = p | (1 << i);
@@ -59,7 +57,7 @@ impl FenwickTree {
     pub fn min_right(&self, l: usize) -> Option<usize> {
         debug_assert!(l <= self.n);
         let s = self.sum_left(l);
-        let i = self.bisect(s + 1);
+        let i = self.bisect(s + T::one());
         if i == self.n {
             None
         } else {
@@ -70,7 +68,7 @@ impl FenwickTree {
     pub fn max_left(&self, r: usize) -> Option<usize> {
         debug_assert!(r <= self.n);
         let s = self.sum_left(r);
-        if s == 0 {
+        if s == T::zero() {
             None
         } else {
             Some(self.bisect(s))
