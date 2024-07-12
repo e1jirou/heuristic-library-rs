@@ -13,3 +13,4 @@ pub mod simulated_annealing;
 pub mod tsp;
 #[allow(unused)]
 pub mod utility;
+pub mod wavelet_matrix;
