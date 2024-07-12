@@ -13,7 +13,7 @@ impl<T: Default> ObjectPool<T> {
         }
     }
 
-    // push `item``, then return the index
+    // push `item`, then return the index
     pub fn push(&mut self, item: T) -> usize {
         if let Some(i) = self.garbage.pop() {
             self.data[i] = item;
@@ -39,7 +39,8 @@ impl<T: Default> ObjectPool<T> {
     }
 
     pub fn clear(&mut self) {
-        self.garbage = (0..self.data.len()).rev().collect();
+        self.data.clear();
+        self.garbage.clear();
     }
 }
 
