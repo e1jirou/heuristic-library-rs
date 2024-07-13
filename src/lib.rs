@@ -1,6 +1,8 @@
 pub mod articulation_point;
 #[allow(unused)]
 pub mod beam_search;
+#[allow(unused)]
+pub mod bipartite_matching;
 pub mod disjoint_set_union;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree;
