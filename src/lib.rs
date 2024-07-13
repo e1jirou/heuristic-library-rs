@@ -10,6 +10,8 @@ pub mod lazy_segment_tree;
 pub mod object_pool;
 pub mod segment_tree;
 pub mod simulated_annealing;
+#[allow(unused)]
+pub mod strongly_connected_components;
 pub mod traveling_salesperson_problem;
 #[allow(unused)]
 pub mod utility;
