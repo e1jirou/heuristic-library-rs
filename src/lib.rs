@@ -13,6 +13,7 @@ pub mod simulated_annealing;
 #[allow(unused)]
 pub mod strongly_connected_components;
 pub mod traveling_salesperson_problem;
+pub mod two_sat;
 #[allow(unused)]
 pub mod utility;
 #[allow(unused)]

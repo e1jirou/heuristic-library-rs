@@ -1,4 +1,4 @@
-struct StronglyConnectedComponents {
+pub struct StronglyConnectedComponents {
     n: usize,
     edges: Vec<(usize, usize)>,
 }
