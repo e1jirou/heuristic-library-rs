@@ -110,10 +110,13 @@ impl<T: num_traits::PrimInt + std::ops::BitOrAssign> WaveletMatrix<T> {
     }
 
     pub fn kth_largest(&self, l: usize, r: usize, k: usize) -> T {
+        debug_assert!(l <= r && r <= self.n);
+        debug_assert!(k < r - l);
         self.kth_smallest(l, r, r - l - k - 1)
     }
 
     pub fn range_freq(&self, mut l: usize, mut r: usize, upper: T) -> usize {
+        debug_assert!(l <= r && r <= self.n);
         if upper >= T::one() << self.log {
             return r - l;
         }
@@ -134,6 +137,7 @@ impl<T: num_traits::PrimInt + std::ops::BitOrAssign> WaveletMatrix<T> {
     }
 
     pub fn range_freq_range(&self, l: usize, r: usize, lower: T, upper: T) -> usize {
+        debug_assert!(l <= r && r <= self.n);
         self.range_freq(l, r, upper) - self.range_freq(l, r, lower)
     }
 }
