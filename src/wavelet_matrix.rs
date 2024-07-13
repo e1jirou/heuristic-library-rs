@@ -46,7 +46,7 @@ impl BitVector {
     }
 }
 
-struct WaveletMatrix<T> {
+pub struct WaveletMatrix<T> {
     n: usize,
     log: usize,
     data: Vec<T>,
