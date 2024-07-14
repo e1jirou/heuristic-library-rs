@@ -9,6 +9,8 @@ pub mod fenwick_tree;
 pub mod geometry;
 pub mod index_set;
 pub mod lazy_segment_tree;
+#[allow(unused)]
+pub mod max_flow;
 pub mod object_pool;
 pub mod segment_tree;
 pub mod simulated_annealing;
