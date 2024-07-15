@@ -19,6 +19,8 @@ pub mod rolling_hash;
 pub mod segment_tree;
 pub mod simulated_annealing;
 #[allow(unused)]
+pub mod sliding_window_aggregation;
+#[allow(unused)]
 pub mod strongly_connected_components;
 pub mod suffix_array;
 pub mod traveling_salesperson_problem;
