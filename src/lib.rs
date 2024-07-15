@@ -25,3 +25,4 @@ pub mod two_sat;
 pub mod utility;
 #[allow(unused)]
 pub mod wavelet_matrix;
+pub mod z_algorithm;
