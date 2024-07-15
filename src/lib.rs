@@ -3,6 +3,7 @@ pub mod articulation_point;
 pub mod beam_search;
 #[allow(unused)]
 pub mod bipartite_matching;
+pub mod dijkstra;
 pub mod disjoint_set_union;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree;
