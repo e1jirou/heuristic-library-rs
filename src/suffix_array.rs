@@ -230,3 +230,35 @@ pub fn suffix_array<T: Ord>(s: &[T]) -> Vec<usize> {
     }
     sa_is(&s2, now)
 }
+
+// Reference:
+// T. Kasai, G. Lee, H. Arimura, S. Arikawa, and K. Park,
+// Linear-Time Longest-Common-Prefix Computation in Suffix Arrays and Its
+// Applications
+pub fn lcp_array<T: Ord>(s: &[T], sa: &[usize]) -> Vec<usize> {
+    let n = s.len();
+    debug_assert!(n >= 1);
+    let mut rnk = vec![0; n];
+    for i in 0..n {
+        rnk[sa[i]] = i;
+    }
+    let mut lcp = vec![0; n - 1];
+    let mut h = 0;
+    for i in 0..n {
+        if h > 0 {
+            h -= 1;
+        }
+        if rnk[i] == 0 {
+            continue;
+        }
+        let j = sa[rnk[i] - 1];
+        while j + h < n && i + h < n {
+            if s[j + h] != s[i + h] {
+                break;
+            }
+            h += 1;
+        }
+        lcp[rnk[i] - 1] = h;
+    }
+    lcp
+}
