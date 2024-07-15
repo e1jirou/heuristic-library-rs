@@ -14,6 +14,8 @@ pub mod lazy_segment_tree;
 pub mod max_flow;
 pub mod min_cost_flow;
 pub mod object_pool;
+#[allow(unused)]
+pub mod rolling_hash;
 pub mod segment_tree;
 pub mod simulated_annealing;
 #[allow(unused)]
