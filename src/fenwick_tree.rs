@@ -37,27 +37,25 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt> FenwickTree<T> {
         s
     }
 
-    pub fn bisect(&self, x: T) -> usize {
-        let mut s = T::zero();
-        let mut p = 0;
+    pub fn lower_bound(&self, mut x: T) -> usize {
+        if x <= T::zero() {
+            return 0;
+        }
+        let mut ret = 0;
         for i in (0..self.log).rev() {
-            let q = p | (1 << i);
-            if q > self.n {
-                continue;
-            }
-            let t = s + self.data[q - 1];
-            if t < x {
-                s = t;
-                p = q;
+            let p = ret | (1 << i);
+            if p <= self.n && self.data[p - 1] < x {
+                x -= self.data[p - 1];
+                ret = p;
             }
         }
-        p
+        ret
     }
 
     pub fn min_right(&self, l: usize) -> Option<usize> {
         debug_assert!(l <= self.n);
         let s = self.sum_left(l);
-        let i = self.bisect(s + T::one());
+        let i = self.lower_bound(s + T::one());
         if i == self.n {
             None
         } else {
@@ -71,7 +69,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt> FenwickTree<T> {
         if s == T::zero() {
             None
         } else {
-            Some(self.bisect(s))
+            Some(self.lower_bound(s))
         }
     }
 }
