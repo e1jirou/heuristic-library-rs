@@ -6,6 +6,8 @@ pub mod bipartite_matching;
 pub mod compress;
 pub mod dijkstra;
 pub mod disjoint_set_union;
+pub mod dynamic_fenwicktree_2d;
+pub mod dynamic_fenwick_tree;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree_2d;
 pub mod fenwick_tree;
