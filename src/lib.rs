@@ -1,4 +1,5 @@
 pub mod articulation_point;
+pub mod base64;
 #[allow(unused)]
 pub mod beam_search;
 #[allow(unused)]
