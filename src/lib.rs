@@ -11,6 +11,7 @@ pub mod dynamic_fenwick_tree;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree_2d;
 pub mod fenwick_tree;
+pub mod floyd_warshall;
 pub mod geometry;
 pub mod index_set;
 pub mod lazy_segment_tree;
