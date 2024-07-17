@@ -3,6 +3,7 @@ pub mod articulation_point;
 pub mod beam_search;
 #[allow(unused)]
 pub mod bipartite_matching;
+pub mod compress;
 pub mod dijkstra;
 pub mod disjoint_set_union;
 pub mod erasable_priority_queue;
