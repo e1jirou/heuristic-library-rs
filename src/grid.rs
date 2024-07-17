@@ -8,6 +8,36 @@ pub struct Grid {
 }
 
 impl Grid {
+    pub fn no_walls(h: usize, w: usize) -> Self {
+        let n = h * w;
+        let mut edges = vec![Vec::with_capacity(4); n];
+        for x in 0..h {
+            for y in 0..w {
+                let v = w * x + y;
+                if x > 0 {
+                    edges[v].push(v - w);
+                }
+                if y > 0 {
+                    edges[v].push(v - 1);
+                }
+                if y + 1 < w {
+                    edges[v].push(v + 1);
+                }
+                if x + 1 < h {
+                    edges[v].push(v + w);
+                }
+            }
+        }
+        Grid {
+            h,
+            w,
+            n,
+            edges,
+            costs: vec![0; n],
+            todo: std::collections::VecDeque::with_capacity(n),
+        }
+    }
+
     // vertical: &[[bool; h]; w - 1]
     // horizontal: &[[bool; w]; h - 1]
     pub fn from_walls(vertical: &[&[bool]], horizontal: &[&[bool]]) -> Self {
@@ -120,6 +150,9 @@ impl Grid {
         self.todo.clear();
         self.todo.push_back(s);
         while let Some(u) = self.todo.pop_front() {
+            if u == t {
+                break;
+            }
             for &v in &self.edges[u] {
                 if self.costs[v] > self.costs[u] + 1 {
                     self.costs[v] = self.costs[u] + 1;
