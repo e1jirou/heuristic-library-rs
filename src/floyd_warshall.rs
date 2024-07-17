@@ -6,11 +6,14 @@ pub struct FloydWarshall<T> {
 }
 
 impl<T: num_traits::NumAssign + num_traits::PrimInt> FloydWarshall<T> {
+    fn max_cost() -> T {
+        T::max_value() >> 1
+    }
+
     pub fn new(n: usize) -> Self {
-        let inf = T::max_value() >> 1;
         FloydWarshall {
             n,
-            edges: vec![inf; n * n],
+            edges: vec![Self::max_cost(); n * n],
             costs: vec![T::zero(); n * n],
             parents: vec![0; n * n],
         }
@@ -50,7 +53,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt> FloydWarshall<T> {
             let ns = self.n * s;
             for v in 0..self.n {
                 let c = self.costs[ns + v];
-                if c == T::max_value() >> 1 {
+                if c == Self::max_cost() {
                     // not connected
                     continue;
                 }
