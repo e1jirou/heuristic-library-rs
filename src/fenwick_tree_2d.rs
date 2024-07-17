@@ -33,7 +33,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>>
         debug_assert!(pl <= pr && pr <= self.n);
         debug_assert!(ql <= qr && qr <= self.m);
         self.add(pl, ql, x);
-        self.add(pl, pr, -x);
+        self.add(pl, qr, -x);
         self.add(pr, ql, -x);
         self.add(pr, qr, x);
     }
