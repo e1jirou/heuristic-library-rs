@@ -13,6 +13,7 @@ pub mod fenwick_tree_2d;
 pub mod fenwick_tree;
 pub mod floyd_warshall;
 pub mod geometry;
+pub mod grid;
 pub mod index_set;
 pub mod lazy_segment_tree;
 #[allow(unused)]
