@@ -29,7 +29,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>>
     }
 
     // add [pl, pr) x [ql, qr) for imos method
-    pub fn rectangle_add(&mut self, pl: usize, pr: usize, ql: usize, qr: usize, x: T) {
+    pub fn rectangle_add(&mut self, pl: usize, ql: usize, pr: usize, qr: usize, x: T) {
         debug_assert!(pl <= pr && pr <= self.n);
         debug_assert!(ql <= qr && qr <= self.m);
         self.add(pl, ql, x);
@@ -57,7 +57,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>>
     }
 
     // [pl, pr) x [ql, qr)
-    pub fn sum(&self, pl: usize, pr: usize, ql: usize, qr: usize) -> T {
+    pub fn sum(&self, pl: usize, ql: usize, pr: usize, qr: usize) -> T {
         debug_assert!(pl <= pr && pr <= self.n);
         debug_assert!(ql <= qr && qr <= self.m);
         self.sum_left(pr, qr) + self.sum_left(pl, ql) - self.sum_left(pl, qr) - self.sum_left(pr, ql)

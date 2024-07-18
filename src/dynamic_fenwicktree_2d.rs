@@ -30,7 +30,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>>
     }
 
     // add [pl, pr) x [ql, qr) for imos method
-    pub fn rectangle_add(&mut self, pl: usize, pr: usize, ql: usize, qr: usize, x: T) {
+    pub fn rectangle_add(&mut self, pl: usize, ql: usize, pr: usize, qr: usize, x: T) {
         debug_assert!(pl <= pr && pr <= self.n);
         debug_assert!(ql <= qr && qr <= self.m);
         let mut add_if_valid = |p, q, x| {
@@ -57,7 +57,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>>
     }
 
     // [pl, pr) x [ql, qr)
-    pub fn sum(&self, mut pl: usize, mut pr: usize, ql: usize, qr: usize) -> T {
+    pub fn sum(&self, mut pl: usize, ql: usize, mut pr: usize, qr: usize) -> T {
         debug_assert!(pl <= pr && pr <= self.n);
         debug_assert!(ql <= qr && qr <= self.m);
         let mut s = T::zero();
