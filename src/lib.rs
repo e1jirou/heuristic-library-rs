@@ -27,6 +27,7 @@ pub mod segment_tree;
 pub mod simulated_annealing;
 #[allow(unused)]
 pub mod sliding_window_aggregation;
+pub mod sparse_table;
 #[allow(unused)]
 pub mod strongly_connected_components;
 pub mod suffix_array;
