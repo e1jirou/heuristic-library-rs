@@ -17,6 +17,7 @@ pub mod geometry;
 pub mod grid;
 pub mod index_set;
 pub mod lazy_segment_tree;
+pub mod map_heap;
 #[allow(unused)]
 pub mod max_flow;
 pub mod min_cost_flow;
