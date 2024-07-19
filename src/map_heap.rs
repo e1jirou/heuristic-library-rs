@@ -20,6 +20,17 @@ impl<T: Clone + Default + Ord> MapHeap<T> {
         self.heap.len() <= 1
     }
 
+    pub fn len(&self) -> usize {
+        self.heap.len() - 1
+    }
+
+    pub fn clear(&mut self) {
+        for &(p, _) in &self.heap[1..] {
+            self.indices[p] = usize::MAX;
+        }
+        self.heap.truncate(1);
+    }
+
     pub fn insert(&mut self, p: usize, x: T) {
         debug_assert!(p < self.n);
         let i = self.indices[p];
