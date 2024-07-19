@@ -161,4 +161,21 @@ impl Grid {
             }
         }
     }
+
+    // call after bfs
+    pub fn shortest_path(&self, s: usize, t: usize) -> Option<Vec<usize>> {
+        debug_assert!(s < self.n);
+        debug_assert!(t < self.n);
+        if self.costs[t] == usize::MAX {
+            return None;
+        }
+        let mut path = vec![t];
+        let mut v = t;
+        while v != s {
+            v = *self.edges[v].iter().find(|&&u| self.costs[u] + 1 == self.costs[v]).unwrap();
+            path.push(v);
+        }
+        path.reverse();
+        Some(path)
+    }
 }
