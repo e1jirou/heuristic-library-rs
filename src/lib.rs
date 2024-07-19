@@ -16,6 +16,7 @@ pub mod floyd_warshall;
 pub mod geometry;
 pub mod grid;
 pub mod index_set;
+pub mod interval_heap;
 pub mod lazy_segment_tree;
 pub mod map_heap;
 #[allow(unused)]
