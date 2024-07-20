@@ -74,13 +74,14 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt> FloydWarshall<T> {
         if self.parents[t] == usize::MAX {
             return None;
         }
-        let mut path = vec![t];
+        let mut path = Vec::new();
         let mut v = t;
         while v != s {
             v = self.parents[v];
             path.push(v);
         }
         path.reverse();
+        path.push(t);
         Some(path)
     }
 }
