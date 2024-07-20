@@ -1,4 +1,5 @@
 pub struct IndexSet {
+    n: usize,
     data: Vec<usize>,
     pos: Vec<usize>,
 }
@@ -6,12 +7,22 @@ pub struct IndexSet {
 impl IndexSet {
     pub fn new(n: usize) -> Self {
         IndexSet {
+            n,
             data: Vec::with_capacity(n),
             pos: vec![usize::MAX; n],
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
     pub fn push(&mut self, x: usize) -> bool {
+        debug_assert!(x < self.n);
         if self.pos[x] == usize::MAX {
             self.pos[x] = self.data.len();
             self.data.push(x);
@@ -22,6 +33,7 @@ impl IndexSet {
     }
 
     pub fn pop(&mut self, x: usize) -> bool {
+        debug_assert!(x < self.n);
         let i = self.pos[x];
         if i == usize::MAX {
             return false;
@@ -39,8 +51,8 @@ impl IndexSet {
     }
 
     pub fn clear(&mut self) {
-        for x in self.data.iter() {
-            self.pos[*x] = usize::MAX;
+        for &x in &self.data {
+            self.pos[x] = usize::MAX;
         }
         self.data.clear();
     }
