@@ -19,6 +19,14 @@ impl<T: PartialOrd> ChangeMinMax for T {
     }
 }
 
+pub fn argmin<T: Ord>(v: &[T]) -> usize {
+    v.iter().enumerate().min_by_key(|&(_, x)| x).unwrap().0
+}
+
+pub fn argmax<T: Ord>(v: &[T]) -> usize {
+    v.iter().enumerate().max_by_key(|&(_, x)| x).unwrap().0
+}
+
 pub fn get_time_sec() -> f64 {
     static mut STIME: f64 = -1.0;
     let t = std::time::SystemTime::now()
