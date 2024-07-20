@@ -16,7 +16,7 @@ impl RollingHash {
         rng.gen_range(1..Self::get_mod())
     }
 
-    pub fn from_vec<T: num_traits::NumCast>(s: &Vec<T>, base: i64) -> Self {
+    pub fn from_vec<T: num_traits::NumCast>(s: &[T], base: i64) -> Self {
         let n = s.len();
         let mut hashes = vec![0; n + 1];
         let mut powers = vec![0; n + 1];
