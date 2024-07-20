@@ -4,7 +4,7 @@ pub trait Monoid {
     fn op(a: &Self::S, b: &Self::S) -> Self::S;
 }
 
-// Constraint: op(x, x) = x
+// Constraint: op(x, x) = x && op(x, y) = op(y, x)
 // Example: min, max
 pub struct SparseTable<M: Monoid> {
     n: usize,
