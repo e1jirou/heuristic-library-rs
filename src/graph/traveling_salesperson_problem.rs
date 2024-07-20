@@ -1,5 +1,3 @@
-use crate::utility::ChangeMinMax;
-
 // calculate the TSP optimal solution
 // start from the last vertex (and end to the last vertex)
 pub fn solve_tsp<T: num_traits::PrimInt>(cost_matrix: &Vec<Vec<T>>, back_to_the_start_point: bool) -> Vec<usize> {
@@ -22,7 +20,7 @@ pub fn solve_tsp<T: num_traits::PrimInt>(cost_matrix: &Vec<Vec<T>>, back_to_the_
             for v in 0..n {
                 if ((s >> v) & 1) == 0 {
                     let cost = dp[u][s] + cost_matrix[u][v];
-                    dp[v][s | (1 << v)].chmin(cost);
+                    dp[v][s | (1 << v)] = dp[v][s | (1 << v)].min(cost);
                 }
             }
         }
@@ -32,11 +30,15 @@ pub fn solve_tsp<T: num_traits::PrimInt>(cost_matrix: &Vec<Vec<T>>, back_to_the_
     let mut s = (1 << n) - 1;
     for v in 0..n {
         if back_to_the_start_point {
-            if cost.chmin(dp[v][s] + cost_matrix[v][n]) {
+            let c = dp[v][s] + cost_matrix[v][n];
+            if c < cost {
+                cost = c;
                 last = v;
             }
         } else {
-            if cost.chmin(dp[v][s]) {
+            let c = dp[v][s];
+            if c < cost {
+                cost = c;
                 last = v;
             }
         }

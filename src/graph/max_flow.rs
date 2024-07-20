@@ -1,3 +1,4 @@
+#[allow(unused)]
 pub struct Edge<Cap> {
     from: usize,
     to: usize,
@@ -12,7 +13,7 @@ struct _Edge<Cap> {
     cap: Cap,
 }
 
-struct MaxFlow<Cap> {
+pub struct MaxFlow<Cap> {
     n: usize,
     pos: Vec<(usize, usize)>,
     g: Vec<Vec<_Edge<Cap>>>,

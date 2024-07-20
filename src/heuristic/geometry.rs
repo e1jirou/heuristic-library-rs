@@ -1,17 +1,14 @@
-use num_complex::Complex;
-use std::f64::consts::PI;
-
 pub type Real = f64;
-pub type Point = Complex<Real>;
+pub type Point = num_complex::Complex<Real>;
 
 pub const EPS: Real = 1e-9;
 
 pub fn radian_to_degree(theta: f64) -> f64 {
-    (180.0 / PI) * theta
+    (180.0 / std::f64::consts::PI) * theta
 }
 
 pub fn degree_to_radian(degree: f64) -> f64 {
-    (PI / 180.0) * degree
+    (std::f64::consts::PI / 180.0) * degree
 }
 
 // almost equal

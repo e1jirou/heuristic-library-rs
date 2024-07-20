@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
-pub type Cost = i32;
-pub type Hash = u64;
+type Cost = i32;
+type Hash = u64;
 
 // beam search setting
 // capacity = 0 is OK.
@@ -21,7 +19,7 @@ pub struct Action {
 // data for evaluation
 // Try to minimize memory usage.
 #[derive(Clone)]
-pub struct Evaluator {
+struct Evaluator {
     // TODO
 }
 
@@ -43,7 +41,7 @@ struct Candidate {
 }
 
 // erasable max priority queue
-pub struct SegmentTree {
+struct SegmentTree {
     n: usize,
     log: usize,
     size: usize,
@@ -98,10 +96,10 @@ impl SegmentTree {
 
 // select beam width candidates from better evaluation
 // It remains only the best one for same hash candidates.
-pub struct Selector {
+struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
-    hash_to_index: HashMap<Hash,usize>,
+    hash_to_index: std::collections::HashMap<Hash,usize>,
     segtree: SegmentTree,
     finished_candidate: Option<Candidate>,
 }
@@ -111,7 +109,7 @@ impl Selector {
         Selector {
             beam_width,
             candidates: Vec::with_capacity(beam_width),
-            hash_to_index: HashMap::with_capacity(beam_width),
+            hash_to_index: std::collections::HashMap::with_capacity(beam_width),
             segtree: SegmentTree::new(beam_width),
             finished_candidate: None,
         }
@@ -199,7 +197,7 @@ pub struct State {
 
 // data updated in depth first search
 impl State {
-    fn new() -> State {
+    pub fn new() -> State {
         todo!();
     }
 
@@ -386,7 +384,7 @@ impl Tree {
             }
         }
 
-        unreachable!("invalid argument: best_leaf_id");
+        panic!("invalid argument: best_leaf_id");
     }
 }
 

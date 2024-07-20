@@ -1,4 +1,5 @@
-struct BipartiteMatching {
+// faster than max flow for most cases
+pub struct BipartiteMatching {
     pre: Vec<usize>,
     root: Vec<usize>,
     to: Vec<Vec<usize>>,

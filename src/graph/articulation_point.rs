@@ -1,5 +1,3 @@
-use fixedbitset::FixedBitSet;
-
 pub struct LowLinkForUndirectedGraph {
     edges: Vec<Vec<usize>>,
     ord: Vec<usize>,
@@ -56,7 +54,7 @@ impl LowLinkForUndirectedGraph {
 // 0 1 2
 // 3 4 5
 // 6 7 8
-pub fn make_connected3x3() -> FixedBitSet {
+pub fn make_connected3x3() -> fixedbitset::FixedBitSet {
     let mut edges = vec![Vec::new(); 9];
     for v in 0..9 {
         if v / 3 > 0 {
@@ -72,7 +70,7 @@ pub fn make_connected3x3() -> FixedBitSet {
             edges[v].push(v + 3);
         }
     }
-    let mut connected3x3 = FixedBitSet::with_capacity(512);
+    let mut connected3x3 = fixedbitset::FixedBitSet::with_capacity(512);
     for s in 1..512 as usize {
         // Depth First Search
         let root = s.trailing_zeros();

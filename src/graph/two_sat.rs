@@ -1,6 +1,6 @@
-use crate::strongly_connected_components::StronglyConnectedComponents;
+use crate::graph::strongly_connected_components::StronglyConnectedComponents;
 
-struct TwoSat {
+pub struct TwoSat {
     n: usize,
     answer: Vec<bool>,
     scc: StronglyConnectedComponents,

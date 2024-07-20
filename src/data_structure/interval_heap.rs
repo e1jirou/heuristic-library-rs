@@ -1,5 +1,5 @@
 // Double-Ended Priority Queue
-struct IntervalHeap<T> {
+pub struct IntervalHeap<T> {
     heap: Vec<T>,
 }
 
@@ -118,7 +118,7 @@ impl<T: Ord> IntervalHeap<T> {
             p ^= 1;
         }
         // max heap
-        while (p > 1) {
+        while p > 1 {
             let q = Self::parent(p);
             if self.heap[p] <= self.heap[q] {
                 break;

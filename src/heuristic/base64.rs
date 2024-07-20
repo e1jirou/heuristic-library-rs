@@ -20,7 +20,7 @@ impl Base64 {
         } else if c == '/' as u8 {
             63
         } else {
-            unreachable!("invalid base64 char: {}", c);
+            panic!("invalid base64 char: {}", c);
         }
     }
 

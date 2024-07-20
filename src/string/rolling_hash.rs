@@ -1,7 +1,6 @@
 use rand::{Rng, SeedableRng};
 
-struct RollingHash {
-    base: i64,
+pub struct RollingHash {
     n: usize,
     hashes: Vec<i64>,
     powers: Vec<i64>,
@@ -27,7 +26,6 @@ impl RollingHash {
             hashes[i + 1] = Self::add(Self::mul(hashes[i], base), s[i].to_i64().unwrap());
         }
         RollingHash {
-            base,
             n,
             hashes,
             powers,

@@ -4,7 +4,7 @@ pub trait Monoid {
     fn op(a: &Self::S, b: &Self::S) -> Self::S;
 }
 
-struct SlidingWindowAggregation<M: Monoid> {
+pub struct SlidingWindowAggregation<M: Monoid> {
     buf: Vec<M::S>,
     former: Vec<M::S>,
     latter: Vec<M::S>,

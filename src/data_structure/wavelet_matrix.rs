@@ -49,17 +49,18 @@ impl BitVector {
 pub struct WaveletMatrix<T> {
     n: usize,
     log: usize,
+    #[allow(unused)]
     data: Vec<T>,
     bv: Vec<BitVector>,
 }
 
 impl<T: num_traits::PrimInt + std::ops::BitOrAssign> WaveletMatrix<T> {
-    pub fn from_vec(data: &Vec<T>) -> Self {
+    pub fn from_vec(data: &[T]) -> Self {
         debug_assert!(!data.is_empty());
         let n = data.len();
         let log = 8 * std::mem::size_of::<T>() - data.iter().map(|x| x.leading_zeros()).min().unwrap() as usize + 1;
         let mut bv = vec![BitVector::new(n); log];
-        let mut curr_data = data.clone();
+        let mut curr_data = data.to_vec();
         let mut next_data = vec![T::zero(); n];
         for h in (0..log).rev() {
             for i in 0..n {
@@ -84,7 +85,7 @@ impl<T: num_traits::PrimInt + std::ops::BitOrAssign> WaveletMatrix<T> {
         WaveletMatrix {
             n,
             log,
-            data: data.clone(),
+            data: data.to_vec(),
             bv,
         }
     }

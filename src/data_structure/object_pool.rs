@@ -1,5 +1,3 @@
-use std::ops::{Index, IndexMut};
-
 pub struct ObjectPool<T> {
     data: Vec<T>,
     garbage: Vec<usize>,
@@ -44,7 +42,7 @@ impl<T: Default> ObjectPool<T> {
     }
 }
 
-impl<T> Index<usize> for ObjectPool<T> {
+impl<T> std::ops::Index<usize> for ObjectPool<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -52,7 +50,7 @@ impl<T> Index<usize> for ObjectPool<T> {
     }
 }
 
-impl<T> IndexMut<usize> for ObjectPool<T> {
+impl<T> std::ops::IndexMut<usize> for ObjectPool<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
     }
