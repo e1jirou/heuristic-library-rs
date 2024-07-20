@@ -112,3 +112,12 @@ impl<T: Clone> CombinationsWithReplacement<T> {
         true
     }
 }
+
+pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Option<u32> {
+    if *x == T::zero() {
+        return None;
+    }
+    let ret = x.trailing_zeros();
+    *x ^= T::one() << ret as usize;
+    Some(ret)
+}
