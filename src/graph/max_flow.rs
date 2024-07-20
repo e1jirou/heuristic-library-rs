@@ -124,7 +124,7 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         self.que.push_back(s);
         while !self.que.is_empty() {
             let v = self.que.pop_front().unwrap();
-            for e in self.g[v].iter() {
+            for e in &self.g[v] {
                 if e.cap == Cap::zero() || self.level[e.to] >= 0 {
                     continue;
                 }
@@ -171,7 +171,7 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         while !self.que.is_empty() {
             let p = self.que.pop_front().unwrap();
             visited[p] = true;
-            for e in self.g[p].iter() {
+            for e in &self.g[p] {
                 if e.cap > Cap::zero() && !visited[e.to] {
                     visited[e.to] = true;
                     self.que.push_back(e.to);

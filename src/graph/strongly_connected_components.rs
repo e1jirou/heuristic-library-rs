@@ -17,7 +17,7 @@ impl StronglyConnectedComponents {
 
     fn csr(&self) -> (Vec<usize>, Vec<usize>) {
         let mut start = vec![0; self.n + 1];
-        for (u, _) in self.edges.iter() {
+        for &(u, _) in &self.edges {
             start[u + 1] += 1;
         }
         for i in 0..self.n {
@@ -25,7 +25,7 @@ impl StronglyConnectedComponents {
         }
         let mut counter = start.clone();
         let mut elist = vec![0; self.edges.len()];
-        for &(u, v) in self.edges.iter() {
+        for &(u, v) in &self.edges {
             elist[counter[u]] = v;
             counter[u] += 1;
         }
@@ -97,7 +97,7 @@ impl StronglyConnectedComponents {
     pub fn scc(&self) -> Vec<Vec<usize>> {
         let (group_num, ids) = self.scc_ids();
         let mut counts = vec![0; group_num];
-        for &x in ids.iter() {
+        for &x in &ids {
             counts[x] += 1;
         }
         let mut groups = vec![vec![]; group_num];

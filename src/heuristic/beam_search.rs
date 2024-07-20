@@ -268,7 +268,7 @@ impl Tree {
         }
 
         let mut leaf_id = 0;
-        for edge in self.curr_tour.iter() {
+        for edge in &self.curr_tour {
             match edge.property {
                 EdgeProperty::Leaf => {
                     let (evaluator, hash) = &self.leaves[leaf_id];
@@ -290,7 +290,7 @@ impl Tree {
         if self.curr_tour.is_empty() {
             // no branch
             self.curr_tour.clear();
-            for candidate in candidates.iter() {
+            for candidate in candidates {
                 self.curr_tour.push(Edge {
                     property: EdgeProperty::Leaf,
                     action: candidate.action.clone(),
@@ -301,7 +301,7 @@ impl Tree {
         }
 
         // bucket sort
-        for candidate in candidates.iter() {
+        for candidate in candidates {
             self.buckets[candidate.parent as usize].push(
                 (candidate.action.clone(), candidate.evaluator.clone(), candidate.hash));
         }
@@ -322,7 +322,7 @@ impl Tree {
         }
 
         let mut leaf_id = 0;
-        for edge in self.curr_tour[curr_tour_id..].iter() {
+        for edge in &self.curr_tour[curr_tour_id..] {
             match edge.property {
                 EdgeProperty::Leaf => {
                     if self.buckets[leaf_id].is_empty() {
@@ -333,7 +333,7 @@ impl Tree {
                         property: EdgeProperty::Forward,
                         action: edge.action.clone(),
                     });
-                    for (action, evaluator, hash) in self.buckets[leaf_id].iter() {
+                    for (action, evaluator, hash) in &self.buckets[leaf_id] {
                         self.next_tour.push(Edge {
                             property: EdgeProperty::Leaf,
                             action: action.clone(),
@@ -370,7 +370,7 @@ impl Tree {
         let mut ret = self.direct_road.clone();
         ret.reserve(turn);
         let mut leaf_id = 0;
-        for edge in self.curr_tour.iter() {
+        for edge in &self.curr_tour {
             match edge.property {
                 EdgeProperty::Leaf => {
                     if leaf_id == best_leaf_id {

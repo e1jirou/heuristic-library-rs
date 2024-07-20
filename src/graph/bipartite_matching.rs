@@ -45,7 +45,7 @@ impl BipartiteMatching {
                 if self.p[self.root[u]] != usize::MAX {
                     continue;
                 }
-                for &v in self.to[u].iter() {
+                for &v in &self.to[u] {
                     let mut v = v;
                     if self.q[v] == usize::MAX {
                         while v != usize::MAX {

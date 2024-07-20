@@ -79,7 +79,7 @@ pub fn make_connected3x3() -> fixedbitset::FixedBitSet {
         while todo > 0 {
             let u = todo.trailing_zeros() as usize;
             todo ^= 1 << u;
-            for v in edges[u].iter() {
+            for &v in &edges[u] {
                 if (s & (1 << v)) > 0 && (visited & (1 << v)) == 0 {
                     visited |= 1 << v;
                     todo |= 1 << v;

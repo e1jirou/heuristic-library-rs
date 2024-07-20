@@ -48,7 +48,7 @@ impl<T: num_traits::NumAssign + num_traits::PrimInt> Dijkstra<T> {
             if u == t {
                 break;
             }
-            for &(v, mut c) in self.edges[u].iter() {
+            for &(v, mut c) in &self.edges[u] {
                 c += cost;
                 if c < self.costs[v] {
                     self.costs[v] = c;
