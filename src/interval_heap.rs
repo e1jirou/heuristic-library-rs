@@ -50,6 +50,38 @@ impl<T: Ord> IntervalHeap<T> {
         }
     }
 
+    pub fn push_pop_min(&mut self, mut x: T) -> T {
+        if self.heap.len() == 0 {
+            return x;
+        }
+        if self.heap.len() == 1 {
+            if self.heap[0] < x {
+                std::mem::swap(&mut self.heap[0], &mut x);
+            }
+            return x;
+        }
+        if x <= self.heap[1] {
+            return x;
+        }
+        std::mem::swap(&mut self.heap[1], &mut x);
+        let p = self.down(1);
+        self.up(p);
+        x
+    }
+
+    pub fn push_pop_max(&mut self, mut x: T) -> T {
+        if self.is_empty() {
+            return x;
+        }
+        if x >= self.heap[0] {
+            return x;
+        }
+        std::mem::swap(&mut self.heap[0], &mut x);
+        let p = self.down(0);
+        self.up(p);
+        x
+    }
+
     pub fn pop_min(&mut self) -> Option<T> {
         if self.heap.len() < 3 {
             self.heap.pop()
