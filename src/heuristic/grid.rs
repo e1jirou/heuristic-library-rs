@@ -3,7 +3,8 @@ pub struct Grid {
     w: usize,
     n: usize,
     edges: Vec<Vec<usize>>,
-    costs: Vec<usize>,
+    bfs_last_time: i32,
+    costs: Vec<i32>,
     todo: std::collections::VecDeque<usize>,
 }
 
@@ -33,6 +34,7 @@ impl Grid {
             w,
             n,
             edges,
+            bfs_last_time: 1,
             costs: vec![0; n],
             todo: std::collections::VecDeque::with_capacity(n),
         }
@@ -72,6 +74,7 @@ impl Grid {
             w,
             n,
             edges,
+            bfs_last_time: 1,
             costs: vec![0; n],
             todo: std::collections::VecDeque::with_capacity(n),
         }
@@ -109,6 +112,7 @@ impl Grid {
             w,
             n,
             edges,
+            bfs_last_time: 1,
             costs: vec![0; n],
             todo: std::collections::VecDeque::with_capacity(n),
         }
@@ -139,43 +143,47 @@ impl Grid {
         dx * dx + dy * dy
     }
 
-    // return distance from s
+    // return distance from s to t
     // If t == self.n, it searches all vertices.
-    pub fn bfs(&mut self, s: usize, t: usize) {
+    pub fn bfs(&mut self, s: usize, t: usize) -> Option<i32> {
         debug_assert!(s < self.n);
         debug_assert!(t <= self.n);
         debug_assert_eq!(self.costs.len(), self.n);
-        self.costs.fill(usize::MAX);
-        self.costs[s] = 0;
+        if s == t {
+            Some(0);
+        }
+        self.costs[s] = self.bfs_last_time;
         self.todo.clear();
         self.todo.push_back(s);
         while let Some(u) = self.todo.pop_front() {
-            if u == t {
-                break;
-            }
             for &v in &self.edges[u] {
-                if self.costs[v] > self.costs[u] + 1 {
+                if self.costs[v] < self.bfs_last_time {
+                    if v == t {
+                        let ret = self.costs[u] + 1;
+                        self.bfs_last_time = ret + 1;
+                        return Some(ret);
+                    }
                     self.costs[v] = self.costs[u] + 1;
                     self.todo.push_back(v);
                 }
             }
         }
+        self.bfs_last_time += self.n as i32;
+        None
     }
 
     // call after bfs
-    pub fn shortest_path(&self, s: usize, t: usize) -> Option<Vec<usize>> {
+    pub fn shortest_path(&self, s: usize, t: usize) -> Vec<usize> {
         debug_assert!(s < self.n);
         debug_assert!(t < self.n);
-        if self.costs[t] == usize::MAX {
-            return None;
-        }
-        let mut path = vec![t];
+        let mut path = Vec::new();
         let mut v = t;
         while v != s {
             v = *self.edges[v].iter().find(|&&u| self.costs[u] + 1 == self.costs[v]).unwrap();
             path.push(v);
         }
         path.reverse();
-        Some(path)
+        path.push(t);
+        path
     }
 }
