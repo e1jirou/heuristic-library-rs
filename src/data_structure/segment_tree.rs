@@ -16,7 +16,7 @@ impl <M: Monoid> SegmentTree<M> {
         Self::from_vec(&vec![M::e(); n])
     }
 
-    pub fn from_vec(v: &Vec<M::S>) -> Self {
+    pub fn from_vec(v: &[M::S]) -> Self {
         let n = v.len();
         let log = (64 - ((n as u64).saturating_sub(1).leading_zeros())) as usize;
         let size = 1 << log;
