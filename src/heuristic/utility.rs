@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 pub trait ChangeMinMax {
     fn chmin(&mut self, x: Self) -> bool;
     fn chmax(&mut self, x: Self) -> bool;
@@ -20,11 +22,28 @@ impl<T: PartialOrd> ChangeMinMax for T {
 }
 
 pub fn argmin<T: Ord>(v: &[T]) -> usize {
+    debug_assert!(!v.is_empty());
     v.iter().enumerate().min_by_key(|&(_, x)| x).unwrap().0
 }
 
 pub fn argmax<T: Ord>(v: &[T]) -> usize {
+    debug_assert!(!v.is_empty());
     v.iter().enumerate().max_by_key(|&(_, x)| x).unwrap().0
+}
+
+pub fn argsort<T: Ord>(v: &[T]) -> Vec<usize> {
+    (0..v.len()).sorted_by_key(|&i| &v[i]).collect_vec()
+}
+
+pub fn rperm(p: &[usize]) -> Vec<usize> {
+    let n = p.len();
+    let mut ret = vec![usize::MAX; n];
+    for i in 0..n {
+        debug_assert!(p[i] < n);
+        debug_assert!(ret[p[i]] == usize::MAX);
+        ret[p[i]] = i;
+    }
+    ret
 }
 
 pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Option<u32> {
