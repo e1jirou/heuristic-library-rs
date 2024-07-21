@@ -32,7 +32,7 @@ pub fn argmax<T: Ord>(v: &[T]) -> usize {
 }
 
 pub fn argsort<T: Ord>(v: &[T]) -> Vec<usize> {
-    (0..v.len()).sorted_by_key(|&i| &v[i]).collect_vec()
+    (0..v.len()).sorted_by_key(|&i| &v[i]).collect()
 }
 
 pub fn rperm(p: &[usize]) -> Vec<usize> {
@@ -44,6 +44,20 @@ pub fn rperm(p: &[usize]) -> Vec<usize> {
         ret[p[i]] = i;
     }
     ret
+}
+
+pub fn bit_set<T: num_traits::PrimInt + std::ops::BitOrAssign>(x: &mut T, p: usize) -> bool {
+    let y = T::one() << p;
+    if (*x & y) == T::zero() {
+        *x |= y;
+        true
+    } else {
+        false
+    }
+}
+
+pub fn bit_get<T: num_traits::PrimInt>(x: T, p: usize) -> bool {
+    (x & (T::one() << p)) != T::zero()
 }
 
 pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Option<u32> {
