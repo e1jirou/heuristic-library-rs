@@ -98,6 +98,11 @@ pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Op
     Some(ret)
 }
 
+pub fn log_sum_pow(base: f64, v: &[f64]) -> f64 {
+    let max_v = v.iter().max_by(|&&x, &y| x.partial_cmp(y).unwrap()).unwrap();
+    v.iter().map(|&x| base.powf(x - max_v)).sum::<f64>().log(base) + max_v
+}
+
 pub fn get_time_sec() -> f64 {
     static mut STIME: f64 = -1.0;
     let t = std::time::SystemTime::now()
