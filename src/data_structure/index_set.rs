@@ -46,7 +46,23 @@ impl IndexSet {
         true
     }
 
+    // pop(x) and push(y)
+    pub fn replace(&mut self, x: usize, y: usize) {
+        debug_assert!(x < self.n);
+        debug_assert!(y < self.n);
+        debug_assert!(self.contains(x));
+        debug_assert!(!self.contains(y));
+        if x == y {
+            return;
+        }
+        let i = self.pos[x];
+        self.data[i] = y;
+        self.pos[x] = usize::MAX;
+        self.pos[y] = i;
+    }
+
     pub fn contains(&self, x: usize) -> bool {
+        debug_assert!(x < self.n);
         self.pos[x] != usize::MAX
     }
 
