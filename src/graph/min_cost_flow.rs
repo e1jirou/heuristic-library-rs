@@ -17,11 +17,11 @@ fn csr<T: Clone + Default>(n: usize, edges: &Vec<(usize, T)>) -> (Vec<usize>, Ve
 
 #[derive(Clone)]
 pub struct Edge<T> {
-    from: usize,
-    to: usize,
-    cap: T,
-    flow: T,
-    cost: T,
+    pub from: usize,
+    pub to: usize,
+    pub cap: T,
+    pub flow: T,
+    pub cost: T,
 }
 
 #[derive(Clone, Default)]
@@ -64,13 +64,13 @@ where
         m
     }
 
-    pub fn get_edge(&self, i: usize) -> Edge<T> {
+    pub fn get_edge(&self, i: usize) -> &Edge<T> {
         debug_assert!(i < self.edges.len());
-        self.edges[i].clone()
+        &self.edges[i]
     }
 
-    pub fn edges(&self) -> Vec<Edge<T>> {
-        self.edges.clone()
+    pub fn edges(&self) -> &Vec<Edge<T>> {
+        &self.edges
     }
 
     // return the amount of the flow and the cost
