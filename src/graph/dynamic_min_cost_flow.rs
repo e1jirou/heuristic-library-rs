@@ -1,9 +1,10 @@
 #[derive(Clone)]
 pub struct Edge<T> {
-    to: usize,
-    cap: T,
-    cost: T,
-    rev: usize,
+    pub to: usize,
+    pub cap: T,
+    pub cost: T,
+    pub rev: usize,
+    pub is_fwd: bool,
 }
 
 pub struct DynamicMinCostFlow<T> {
@@ -18,7 +19,7 @@ pub struct DynamicMinCostFlow<T> {
 }
 
 impl<T> DynamicMinCostFlow<T>
-where T: num_traits::PrimInt + std::ops::Neg<Output = T>,
+where T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>,
 {
     pub fn new(n: usize) -> Self {
         DynamicMinCostFlow {
@@ -41,12 +42,14 @@ where T: num_traits::PrimInt + std::ops::Neg<Output = T>,
             cap,
             cost,
             rev,
+            is_fwd: true,
         });
         self.edges[to].push(Edge {
             to: from,
             cap: T::zero(),
             cost: -cost,
             rev: fwd,
+            is_fwd: false,
         });
         fwd
     }
@@ -60,11 +63,28 @@ where T: num_traits::PrimInt + std::ops::Neg<Output = T>,
         if cost + self.potentials[from] - self.potentials[to] >= T::zero() {
             return self.add_edge(from, to, cap, cost);
         }
-        todo!();
+        todo!("delete negative cycle");
     }
 
     pub fn remove_edge(&mut self, from: usize, fwd: usize) {
-        todo!();
+        let e_fwd = self.edges[from][fwd].clone();
+        let to = e_fwd.to;
+        let rev = e_fwd.rev;
+        let flow = self.edges[to][rev].cap;
+
+        self.edges[from].swap_remove(fwd);
+        if fwd < self.edges[from].len() {
+            let e = self.edges[from][fwd].clone();
+            self.edges[e.to][e.rev].rev = fwd;
+        }
+        self.edges[to].swap_remove(rev);
+        if rev < self.edges[to].len() {
+            let e = self.edges[to][rev].clone();
+            self.edges[e.to][e.rev].rev = rev;
+        }
+        self.supplies[from] += flow;
+        self.supplies[to] -= flow;
+        self.cost -= e_fwd.cost * flow;
     }
 
     // return an isolated vertex
@@ -83,12 +103,10 @@ where T: num_traits::PrimInt + std::ops::Neg<Output = T>,
 
     pub fn remove_vertex(&mut self, u: usize) {
         while let Some(e) = self.edges[u].last() {
-            if e.cost < T::zero() {
-                // reverse edge
-                self.remove_edge(e.to, e.rev);
-            } else {
-                // forward edge
+            if e.is_fwd {
                 self.remove_edge(u, self.edges[u].len() - 1);
+            } else {
+                self.remove_edge(e.to, e.rev);
             }
         }
         self.unused_vertices.push(u);
