@@ -46,6 +46,11 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         self.cost
     }
 
+    pub fn add_supply(&mut self, v: usize, supply: T) {
+        debug_assert!(v < self.n);
+        self.supplies[v] += supply;
+    }
+
     fn internal_add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) -> usize {
         let fwd = self.edges[from].len();
         let rev = self.edges[to].len();
@@ -191,6 +196,8 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
             }
         }
         self.unused_vertices.push(u);
+        self.dual[u] = T::zero();
+        self.supplies[u] = T::zero();
     }
 
     pub fn flow(&mut self) -> T {
