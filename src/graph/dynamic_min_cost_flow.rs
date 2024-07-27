@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 #[derive(Clone)]
 pub struct Edge<T> {
     pub to: usize,
@@ -11,27 +13,37 @@ pub struct DynamicMinCostFlow<T> {
     n: usize,
     edges: Vec<Vec<Edge<T>>>,
     unused_vertices: Vec<usize>,
-    potentials: Vec<T>,
+    dual: Vec<T>,
     supplies: Vec<T>,
     cost: T,
+    dist: Vec<T>,
+    prev_e: Vec<usize>,
+    vis: Vec<bool>,
     que_min: Vec<usize>,
     que: std::collections::BinaryHeap<std::cmp::Reverse<(T, usize)>>,
 }
 
 impl<T> DynamicMinCostFlow<T>
-where T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>,
+where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>,
 {
     pub fn new(n: usize) -> Self {
         DynamicMinCostFlow {
             n,
             edges: vec![Vec::new(); n],
             unused_vertices: Vec::new(),
-            potentials: vec![T::zero(); n],
+            dual: vec![T::zero(); n],
             supplies: vec![T::zero(); n],
             cost: T::zero(),
+            dist: vec![T::zero(); n],
+            prev_e: vec![0; n],
+            vis: vec![false; n],
             que_min: Vec::new(),
             que: std::collections::BinaryHeap::new(),
         }
+    }
+
+    pub fn get_cost(&self) -> T {
+        self.cost
     }
 
     fn internal_add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) -> usize {
@@ -60,14 +72,36 @@ where T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>
         debug_assert_ne!(from, to);
         debug_assert!(cap >= T::zero());
         debug_assert!(cost >= T::zero());
-        if cost + self.potentials[from] - self.potentials[to] >= T::zero() {
+        if cost + self.dual[from] - self.dual[to] >= T::zero() {
             return self.add_edge(from, to, cap, cost);
         }
-        todo!("delete negative cycle");
+        self.flow();
+        if cost + self.dual[from] - self.dual[to] >= T::zero() {
+            return self.add_edge(from, to, cap, cost);
+        }
+        // flow along the minimum cost negative cycle
+        self.supplies[to] += cap;
+        self.supplies[from] -= cap;
+        let to_supply = self.supplies[to];
+        let from_supply = self.supplies[from];
+        let flow = self.flow_with_limits(cap, cost);
+        debug_assert_eq!(self.supplies[to], to_supply - flow);
+        debug_assert_eq!(self.supplies[from], from_supply + flow);
+
+        // flow along the adding edge
+        let fwd = self.add_edge(from, to, cap, cost);
+        let rev = self.edges[from][fwd].rev;
+        self.edges[from][fwd].cap -= flow;
+        self.edges[to][rev].cap += flow;
+        self.cost += flow * cost;
+        self.supplies[to] -= cap - flow;
+        self.supplies[from] += cap - flow;
+        fwd
     }
 
     pub fn remove_edge(&mut self, from: usize, fwd: usize) {
         let e_fwd = self.edges[from][fwd].clone();
+        debug_assert!(e_fwd.is_fwd);
         let to = e_fwd.to;
         let rev = e_fwd.rev;
         let flow = self.edges[to][rev].cap;
@@ -95,7 +129,7 @@ where T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>
             let ret = self.n;
             self.n += 1;
             self.edges.push(Vec::new());
-            self.potentials.push(T::zero());
+            self.dual.push(T::zero());
             self.supplies.push(T::zero());
             ret
         }
@@ -112,8 +146,107 @@ where T: num_traits::NumAssign + num_traits::PrimInt + std::ops::Neg<Output = T>
         self.unused_vertices.push(u);
     }
 
-    // return the amount of the flow and the cost
-    pub fn flow() -> (T, T) {
-        todo!();
+    pub fn flow(&mut self) -> T {
+        self.flow_with_limits(T::max_value(), T::max_value())
+    }
+
+    // return the amount of the flow
+    pub fn flow_with_limits(&mut self, flow_limit: T, cost_limit: T) -> T {
+        let sources = (0..self.n).filter(|&v| self.supplies[v] > T::zero()).collect_vec();
+        if sources.is_empty() {
+            return T::zero();
+        }
+        let min_potential = sources.iter().map(|&v| self.dual[v]).min().unwrap();
+        for p in &mut self.dual {
+            *p -= min_potential;
+        }
+        self.dist.resize(self.n, T::zero());
+        self.prev_e.resize(self.n, 0);
+        self.vis.resize(self.n, false);
+
+        let mut flow = T::zero();
+
+        while flow < flow_limit {
+            self.dist.fill(T::max_value());
+            self.vis.fill(false);
+            self.que_min.clear();
+            self.que.clear();
+
+            for &s in &sources {
+                if self.supplies[s] > T::zero() {
+                    // source
+                    let cost = -self.dual[s];
+                    self.dist[s] = cost;
+                    self.que.push(std::cmp::Reverse((cost, s)));
+                }
+            }
+            let mut t = usize::MAX;
+            while !self.que_min.is_empty() || !self.que.is_empty() {
+                let v = if !self.que_min.is_empty() {
+                    self.que_min.pop().unwrap()
+                } else {
+                    self.que.pop().unwrap().0.1
+                };
+                if self.vis[v] {
+                    continue;
+                }
+                self.vis[v] = true;
+                if self.supplies[v] < T::zero() {
+                    t = v;
+                    break;
+                }
+                let dual_v = self.dual[v];
+                let dist_v = self.dist[v];
+                for e in &self.edges[v] {
+                    if e.cap == T::zero() {
+                        continue;
+                    }
+                    let cost = e.cost - self.dual[e.to] + dual_v;
+                    debug_assert!(cost >= T::zero());
+                    if self.dist[e.to] - dist_v > cost {
+                        let dist_to = dist_v + cost;
+                        if dist_to > cost_limit {
+                            continue;
+                        }
+                        self.dist[e.to] = dist_to;
+                        self.prev_e[e.to] = e.rev;
+                        if dist_to == dist_v {
+                            self.que_min.push(e.to);
+                        } else {
+                            self.que.push(std::cmp::Reverse((dist_to, e.to)));
+                        }
+                    }
+                }
+            }
+            if t == usize::MAX {
+                break;
+            }
+            for v in 0..self.n {
+                if !self.vis[v] {
+                    continue;
+                }
+                self.dual[v] -= self.dist[t] - self.dist[v];
+            }
+
+            let mut c = flow_limit - flow;
+            let mut v = t;
+            while self.supplies[v] <= T::zero() {
+                let e = &self.edges[v][self.prev_e[v]];
+                c = c.min(self.edges[e.to][e.rev].cap);
+                v = e.to;
+            }
+            let s = v;
+            v = t;
+            while self.supplies[v] <= T::zero() {
+                self.edges[v][self.prev_e[v]].cap += c;
+                let fwd = self.edges[v][self.prev_e[v]].rev;
+                v = self.edges[v][self.prev_e[v]].to;
+                self.edges[v][fwd].cap -= c;
+            }
+            let d = self.dual[t] - self.dual[s];
+            flow += c;
+            self.cost += c * d;
+        }
+        flow
     }
 }
