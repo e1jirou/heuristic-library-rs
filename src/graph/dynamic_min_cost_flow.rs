@@ -95,13 +95,14 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                 if e.cap == T::zero() {
                     continue;
                 }
-                let cost_to = e.cost - self.dual[e.to] + dual_v;
-                if cost_to < self.dist[e.to] {
-                    self.dist[e.to] = cost_to;
+                let to = e.to;
+                let cost_to = e.cost - self.dual[to] + dual_v;
+                if cost_to < self.dist[to] {
+                    self.dist[to] = cost_to;
                     if cost == cost_v {
-                        self.que_min.push(e.to);
+                        self.que_min.push(to);
                     } else {
-                        self.que.push(std::cmp::Reverse((cost_to, e.to)));
+                        self.que.push(std::cmp::Reverse((cost_to, to)));
                     }
                 }
             }
@@ -240,6 +241,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                 let dual_v = self.dual[v];
                 let dist_v = self.dist[v];
                 for e in &self.edges[v] {
+                    let e = e.clone();
                     if e.cap == T::zero() {
                         continue;
                     }
