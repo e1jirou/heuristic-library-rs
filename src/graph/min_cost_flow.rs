@@ -145,7 +145,7 @@ where
                 let dual_v = dual_dist[v].0;
                 let dist_v = dual_dist[v].1;
                 for i in start[v]..start[v + 1] {
-                    let e = &elist[i];
+                    let e = elist[i].clone();
                     if e.cap == T::zero() {
                         continue;
                     }
