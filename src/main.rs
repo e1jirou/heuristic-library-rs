@@ -1,31 +1,28 @@
 use proconio::input;
-use std::process::exit;
 use itertools::Itertools;
 
+#[allow(unused)]
 const TIME_LIMIT_SEC: f64 = 1.95;
 
 fn main() {
     get_time_sec();
 
-    let input = Input::read_input();
+    #[allow(unused)]
+    let input = read_input();
 
-    todo!();
-
-    exit(0);
+    std::process::exit(0);
 }
 
 struct Input {
     // TODO
 }
 
-impl Input {
-    fn read_input() -> Self {
-        input! {
-            // TODO
-        }
-        Input {
-            // TODO
-        }
+fn read_input() -> Input {
+    input! {
+        // TODO
+    }
+    Input {
+        // TODO
     }
 }
 
