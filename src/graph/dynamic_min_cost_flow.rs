@@ -31,6 +31,10 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         }
     }
 
+    pub fn get_edges(&self) -> &Vec<Vec<Edge<T>>> {
+        &self.edges
+    }
+
     pub fn get_cost(&self) -> T {
         self.cost
     }
@@ -105,7 +109,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
     }
 
     // For speed-up, add edges to new vertices before adding edges from them.
-    pub fn add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) -> usize {
+    pub fn add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) {
         debug_assert!(from < self.n);
         debug_assert!(to < self.n);
         debug_assert_ne!(from, to);
@@ -114,7 +118,8 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
 
         let reduced_cost = cost + self.dual[from] - self.dual[to];
         if reduced_cost >= T::zero() {
-            return self.internal_add_edge(from, to, cap, cost);
+            self.internal_add_edge(from, to, cap, cost);
+            return;
         }
         // flow along the minimum cost negative cycle
         let mut original_supplies = vec![T::zero(); self.n];
@@ -136,10 +141,9 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         self.edges[from][fwd].cap -= flow;
         self.edges[to][rev].cap += flow;
         self.cost += flow * cost;
-        fwd
     }
 
-    pub fn remove_edge(&mut self, from: usize, fwd: usize) {
+    fn internal_remove_edge(&mut self, from: usize, fwd: usize) {
         let e_fwd = self.edges[from][fwd].clone();
         debug_assert!(e_fwd.is_fwd);
         let to = e_fwd.to;
@@ -161,6 +165,15 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         self.cost -= e_fwd.cost * flow;
     }
 
+    pub fn remove_edge(&mut self, from: usize, to: usize) {
+        for i in (0..self.edges[from].len()).rev() {
+            let e = self.edges[from][i].clone();
+            if e.to == to && e.is_fwd {
+                self.internal_remove_edge(from, i);
+            }
+        }
+    }
+
     // return an isolated vertex
     pub fn add_vertex(&mut self) -> usize {
         if let Some(ret) = self.unused_vertices.pop() {
@@ -175,17 +188,17 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         }
     }
 
-    pub fn remove_vertex(&mut self, u: usize) {
-        while let Some(e) = self.edges[u].last() {
+    pub fn remove_vertex(&mut self, v: usize) {
+        while let Some(e) = self.edges[v].last() {
             if e.is_fwd {
-                self.remove_edge(u, self.edges[u].len() - 1);
+                self.internal_remove_edge(v, self.edges[v].len() - 1);
             } else {
-                self.remove_edge(e.to, e.rev);
+                self.internal_remove_edge(e.to, e.rev);
             }
         }
-        self.unused_vertices.push(u);
-        self.dual[u] = T::zero();
-        self.supplies[u] = T::zero();
+        self.unused_vertices.push(v);
+        self.dual[v] = T::zero();
+        self.supplies[v] = T::zero();
     }
 
     pub fn flow(&mut self) -> T {
@@ -272,7 +285,6 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                 }
                 self.dual[v] -= dist[t] - dist[v];
             }
-
             let mut c = (flow_limit - flow).min(-self.supplies[t]);
             let mut v = t;
             while self.supplies[v] <= T::zero() {
