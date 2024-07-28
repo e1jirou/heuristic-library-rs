@@ -1,5 +1,5 @@
-use proconio::input;
 use itertools::Itertools;
+use proconio::input;
 
 #[allow(unused)]
 const TIME_LIMIT_SEC: f64 = 1.95;
