@@ -63,7 +63,11 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
     // update dual
     fn change_to_non_negative_cost(&mut self, s: usize, cost: T) {
         debug_assert!(cost < T::zero());
-        
+
+        if self.edges[s].iter().all(|e| e.cap == T::zero() || e.cost - self.dual[e.to] + self.dual[s] + cost >= T::zero()) {
+            self.dual[s] += cost;
+            return;
+        }
         let mut costs = vec![T::zero(); self.n];
         let mut que_min = Vec::new();
         let mut que: std::collections::BinaryHeap<std::cmp::Reverse<(T, usize)>> = std::collections::BinaryHeap::new();
@@ -100,12 +104,14 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         }
     }
 
+    // For speed-up, add edges to new vertices before adding edges from them.
     pub fn add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) -> usize {
         debug_assert!(from < self.n);
         debug_assert!(to < self.n);
         debug_assert_ne!(from, to);
         debug_assert!(cap >= T::zero());
         debug_assert!(cost >= T::zero());
+
         let reduced_cost = cost + self.dual[from] - self.dual[to];
         if reduced_cost >= T::zero() {
             return self.internal_add_edge(from, to, cap, cost);
@@ -124,7 +130,6 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         if reduced_cost < T::zero() {
             self.change_to_non_negative_cost(to, reduced_cost);
         }
-
         // flow along the adding edge
         let fwd = self.internal_add_edge(from, to, cap, cost);
         let rev = self.edges[from][fwd].rev;
