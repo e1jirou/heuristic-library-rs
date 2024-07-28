@@ -29,7 +29,7 @@ impl<Cost: num_traits::NumAssign + num_traits::PrimInt> SteinerTree<Cost> {
         for i in 0..terminals.len() {
             self.dp[1 << i][terminals[i]] = Cost::zero();
         }
-        let mut que = std::collections::BinaryHeap::with_capacity(1 << terminals.len());
+        let mut que = std::collections::BinaryHeap::with_capacity(self.n);
         for s in 1..(1 << terminals.len()) {
             for v in 0..self.n {
                 let mut t = s;
