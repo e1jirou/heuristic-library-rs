@@ -141,7 +141,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         let rev = self.edges[from][fwd].rev;
         self.edges[from][fwd].cap -= flow;
         self.edges[to][rev].cap += flow;
-        self.cost += flow * cost;
+        self.cost += flow * reduced_cost;
     }
 
     fn internal_remove_edge(&mut self, from: usize, fwd: usize) {
@@ -305,6 +305,8 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
             let d = self.dual[t] - self.dual[s];
             flow += c;
             self.cost += c * d;
+            self.supplies[s] -= c;
+            self.supplies[t] += c;
         }
         flow
     }
