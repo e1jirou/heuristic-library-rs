@@ -1,22 +1,20 @@
-use std::collections::BinaryHeap;
-
 pub struct ErasablePriorityQueue<T> {
-    data: BinaryHeap<T>,
-    lazy: BinaryHeap<T>,
+    data: std::collections::BinaryHeap<T>,
+    lazy: std::collections::BinaryHeap<T>,
 }
 
 impl<T: Ord> ErasablePriorityQueue<T> {
     pub fn new() -> Self {
         ErasablePriorityQueue {
-            data: BinaryHeap::new(),
-            lazy: BinaryHeap::new(),
+            data: std::collections::BinaryHeap::new(),
+            lazy: std::collections::BinaryHeap::new(),
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
         ErasablePriorityQueue {
-            data: BinaryHeap::with_capacity(capacity),
-            lazy: BinaryHeap::with_capacity(capacity),
+            data: std::collections::BinaryHeap::with_capacity(capacity),
+            lazy: std::collections::BinaryHeap::with_capacity(capacity),
         }
     }
 
