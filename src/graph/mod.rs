@@ -1,6 +1,7 @@
 pub mod articulation_point;
 pub mod bipartite_matching;
 pub mod dijkstra;
+pub mod dynamic_min_cost_flow;
 pub mod floyd_warshall;
 pub mod max_flow;
 pub mod min_cost_flow;
