@@ -31,12 +31,12 @@ impl<Cost: num_traits::NumAssign + num_traits::PrimInt> SteinerTree<Cost> {
         }
         let mut que = std::collections::BinaryHeap::with_capacity(self.n);
         for s in 1..(1 << terminals.len()) {
-            for v in 0..self.n {
-                let mut t = s;
-                while t > 0 {
+            let mut t = s;
+            while t > (s ^ t) {
+                for v in 0..self.n {
                     self.dp[s][v] = self.dp[s][v].min(self.dp[t][v] + self.dp[s ^ t][v]);
-                    t = (t - 1) & s;
                 }
+                t = (t - 1) & s;
             }
             for v in 0..self.n {
                 que.push(std::cmp::Reverse((self.dp[s][v], v)));
