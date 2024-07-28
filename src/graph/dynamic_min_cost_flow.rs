@@ -96,6 +96,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                     continue;
                 }
                 let cost_to = e.cost - self.dual[e.to] + dual_v;
+                debug_assert!(cost_to >= cost_v);
                 if cost_to < costs[e.to] {
                     costs[e.to] = cost_to;
                     if cost_to == cost_v {
