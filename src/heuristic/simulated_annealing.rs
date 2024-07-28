@@ -1,8 +1,5 @@
 use crate::heuristic::utility::get_time_sec;
 
-use rand::seq::SliceRandom;
-use rand::SeedableRng;
-
 const SA_TIME_COUNTS: usize = 1 << 4;
 const SA_RANDOM_STEPS: usize = 1 << 12;
 
@@ -36,6 +33,10 @@ impl SimulatedAnnealingScheduler {
         for i in 0..SA_RANDOM_STEPS {
             log2_random[i] = ((i + 1) as f64 / SA_RANDOM_STEPS as f64).log2();
         }
+
+        use rand::seq::SliceRandom;
+        use rand::SeedableRng;
+
         let mut rng = rand_pcg::Pcg64Mcg::seed_from_u64(0);
         log2_random.shuffle(&mut rng);
         SimulatedAnnealingScheduler {

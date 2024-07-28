@@ -72,34 +72,6 @@ pub fn rperm(p: &[usize]) -> Vec<usize> {
     ret
 }
 
-pub fn bit_set<T: num_traits::PrimInt + std::ops::BitOrAssign>(x: &mut T, p: usize) -> bool {
-    let y = T::one() << p;
-    if (*x & y) == T::zero() {
-        *x |= y;
-        true
-    } else {
-        false
-    }
-}
-
-pub fn bit_get<T: num_traits::PrimInt>(x: T, p: usize) -> bool {
-    (x & (T::one() << p)) != T::zero()
-}
-
-pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Option<u32> {
-    if *x == T::zero() {
-        return None;
-    }
-    let ret = x.trailing_zeros();
-    *x ^= T::one() << ret as usize;
-    Some(ret)
-}
-
-pub fn log_sum_pow(base: f64, v: &[f64]) -> f64 {
-    let max_v = v.iter().max_by(|&&x, &y| x.partial_cmp(y).unwrap()).unwrap();
-    v.iter().map(|&x| base.powf(x - max_v)).sum::<f64>().log(base) + max_v
-}
-
 pub fn get_time_sec() -> f64 {
     static mut STIME: f64 = -1.0;
     let t = std::time::SystemTime::now()
