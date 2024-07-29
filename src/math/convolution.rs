@@ -140,3 +140,27 @@ impl FftInfo {
         }
     }
 }
+
+fn butterfly(a: &mut Vec<i64>, info: &FftInfo) {
+    todo!();
+}
+
+fn butterfly_inv(a: &mut Vec<i64>, info: &FftInfo) {
+    todo!();
+}
+
+fn convolution_naive(a: &Vec<i64>, b: &Vec<i64>) -> Vec<i64> {
+    todo!();
+}
+
+fn convolution_fft(mut a: Vec<i64>, mut b: Vec<i64>) -> Vec<i64> {
+    todo!();
+}
+
+pub fn convolution(a: &[i64], b: &[i64]) -> Vec<i64> {
+    todo!();
+}
+
+pub fn convolution_ll(a: &[i64], b: &[i64]) -> Vec<i64> {
+    todo!();
+}
