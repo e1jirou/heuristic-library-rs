@@ -9,10 +9,24 @@ pub struct ModInt {
 }
 
 impl ModInt {
-    pub fn new(v: i64) -> Self {
+    pub fn from_i64(v: i64) -> Self {
         ModInt {
             v: safe_mod(v, MOD) as u32,
         }
+    }
+
+    pub fn from_u64(v: u64) -> Self {
+        ModInt {
+            v: (v % (MOD as u64)) as u32,
+        }
+    }
+
+    pub fn zero() -> Self {
+        Self::raw(0)
+    }
+
+    pub fn one() -> Self {
+        Self::raw(1)
     }
 
     pub fn raw(v: u32) -> Self {
@@ -47,7 +61,7 @@ impl ModInt {
         } else {
             let eg = inv_gcd(self.v as i64, MOD);
             debug_assert!(eg.0 == 1);
-            Self::new(eg.1)
+            Self::from_i64(eg.1)
         }
     }
 }
