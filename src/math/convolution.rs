@@ -57,7 +57,7 @@ const fn primitive_root_const(m: i32) -> i32 {
 }
 
 const G: u32 = primitive_root_const(MOD as i32) as u32;
-const RANK2: usize = 63 - ((MOD - 1) & (1 - MOD)).leading_zeros() as usize;
+const RANK2: usize = (MOD - 1).trailing_zeros() as usize;
 
 struct FftInfo {
     root: [ModInt; RANK2 + 1],
@@ -80,8 +80,8 @@ impl FftInfo {
         }
         let mut rate2 = [ModInt::zero(); RANK2 - 1];
         let mut irate2 = [ModInt::zero(); RANK2 - 1];
-        let mut prod = ModInt::raw(1);
-        let mut iprod = ModInt::raw(1);
+        let mut prod = ModInt::one();
+        let mut iprod = ModInt::one();
         for i in 0..=(RANK2 - 2) {
             rate2[i] = root[i + 2] * prod;
             irate2[i] = iroot[i + 2] * iprod;
@@ -90,8 +90,8 @@ impl FftInfo {
         }
         let mut rate3 = [ModInt::zero(); RANK2 - 2];
         let mut irate3 = [ModInt::zero(); RANK2 - 2];
-        let mut prod = ModInt::raw(1);
-        let mut iprod = ModInt::raw(1);
+        let mut prod = ModInt::one();
+        let mut iprod = ModInt::one();
         for i in 0..=(RANK2 - 3) {
             rate3[i] = root[i + 3] * prod;
             irate3[i] = iroot[i + 3] * iprod;
@@ -111,13 +111,13 @@ impl FftInfo {
 
 fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
     let n = a.len();
-    let h = n.trailing_zeros();
+    let h = n.trailing_zeros() as i32;
 
-    let mut len = 0;
+    let mut len = 0;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
     while len < h {
         if h - len == 1 {
             let p = 1 << (h - len - 1);
-            let mut rot = ModInt::raw(1);
+            let mut rot = ModInt::one();
             for s in 0..(1 << len) {
                 let offset = s << (h - len);
                 for i in 0..p {
@@ -134,7 +134,7 @@ fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
         } else {
             // 4-base
             let p = 1 << (h - len - 2);
-            let mut rot = ModInt::raw(1);
+            let mut rot = ModInt::one();
             let imag = info.root[2];
             for s in 0..(1 << len) {
                 let rot2 = rot * rot;
@@ -164,13 +164,13 @@ fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
 
 fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
     let n = a.len();
-    let h = n.trailing_zeros();
+    let h = n.trailing_zeros() as i32;
 
     let mut len = h;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
-    while len > 0 {
+    while len != 0 {
         if len == 1 {
             let p = 1 << (h - len);
-            let mut irot = ModInt::raw(1);
+            let mut irot = ModInt::one();
             for s in 0..(1 << (len - 1)) {
                 let offset = s << (h - len + 1);
                 for i in 0..p {
@@ -187,7 +187,7 @@ fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
         } else {
             // 4-base
             let p = 1 << (h - len);
-            let mut irot = ModInt::raw(1);
+            let mut irot = ModInt::one();
             let iimag = info.iroot[2];
             for s in 0..(1 << (len - 2)) {
                 let irot2 = irot * irot;
@@ -199,7 +199,7 @@ fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
                     let a2 = a[i + offset + 2 * p].val() as u64;
                     let a3 = a[i + offset + 3 * p].val() as u64;
                     let a2na3iimag = ModInt::from_u64((MOD as u64 + a2 - a3) * iimag.val() as u64).val() as u64;
-                    a[i + offset] = ModInt::from_u64(a0 + a2 + a1 + a3);
+                    a[i + offset] = ModInt::from_u64(a0 + a1 + a2 + a3);
                     a[i + offset + p] = ModInt::from_u64((a0 + (MOD as u64 - a1) + a2na3iimag) * irot.val() as u64);
                     a[i + offset + 2 * p] = ModInt::from_u64((a0 + a1 + (MOD as u64 - a2) + (MOD as u64 - a3)) * irot2.val() as u64);
                     a[i + offset + 3 * p] = ModInt::from_u64((a0 + (MOD as u64 - a1) + (MOD as u64 - a2na3iimag)) * irot3.val() as u64);
@@ -248,8 +248,8 @@ fn convolution_fft(mut a: Vec<ModInt>, mut b: Vec<ModInt>) -> Vec<ModInt> {
         a[i] *= b[i];
     }
     butterfly_inv(&mut a, &info);
-    a.resize(n + m - 1, ModInt::zero());
-    let iz = ModInt::from_i64((n + m - 1) as i64).inv();
+    a.truncate(n + m - 1);
+    let iz = ModInt::from_usize(z).inv();
     for i in 0..(n + m - 1) {
         a[i] *= iz;
     }

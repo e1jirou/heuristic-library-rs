@@ -21,6 +21,12 @@ impl ModInt {
         }
     }
 
+    pub fn from_usize(v: usize) -> Self {
+        ModInt {
+            v: (v % (MOD as usize)) as u32,
+        }
+    }
+
     pub fn zero() -> Self {
         Self::raw(0)
     }
@@ -43,7 +49,7 @@ impl ModInt {
     pub fn pow(&self, mut n: i64) -> Self {
         debug_assert!(n >= 0);
         let mut x = *self;
-        let mut r = Self::raw(1);
+        let mut r = Self::one();
         while n > 0 {
             if (n & 1) == 1 {
                 r *= x;
@@ -101,7 +107,7 @@ impl std::ops::Neg for ModInt {
 
     fn neg(self) -> Self::Output {
         if self.v == 0 {
-            Self::raw(0)
+            Self::zero()
         } else {
             Self::raw(UMOD - self.v)
         }
@@ -146,7 +152,7 @@ impl std::ops::Div for ModInt {
 
 impl Default for ModInt {
     fn default() -> Self {
-        ModInt::raw(0)
+        ModInt::zero()
     }
 }
 
