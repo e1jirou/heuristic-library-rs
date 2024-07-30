@@ -1,32 +1,6 @@
-fn safe_mod(mut x: i64, m: i64) -> i64 {
-    debug_assert!(m >= 1);
-    x %= m;
-    if x < 0 {
-        x += m;
-    }
-    x
-}
+use super::mod_int::{MOD, ModInt, pow_mod_const};
 
-fn pow_mod(x: i64, mut n: i64, m: i64) -> i64 {
-    debug_assert!(n >= 0);
-    debug_assert!(m >= 1);
-    debug_assert!((m as i32) as i64 == m);
-    if m == 1 {
-        return 0;
-    }
-    let mut r = 1;
-    let mut y = safe_mod(x, m) as u64;
-    while n != 0 {
-        if (n & 1) > 0 {
-            r = (r * y) % (m as u64);
-        }
-        y = (y * y) % (m as u64);
-        n >>= 1;
-    }
-    r as i64
-}
-
-fn primitive_root(m: i64) -> i64 {
+const fn primitive_root_const(m: i32) -> i32 {
     if m == 2 {
         return 1;
     }
@@ -67,70 +41,64 @@ fn primitive_root(m: i64) -> i64 {
     let mut g = 2;
     loop {
         let mut ok = true;
-        for i in 0..cnt {
-            if pow_mod(g, (m - 1) / divs[i], m) == 1 {
+        let mut i = 0;
+        while i < cnt {
+            if pow_mod_const(g, ((m - 1) / divs[i]) as i64, m) == 1 {
                 ok = false;
                 break;
             }
+            i += 1;
         }
         if ok {
-            return g;
+            return g as i32;
         }
         g += 1;
     }
 }
 
+const G: u32 = primitive_root_const(MOD as i32) as u32;
+const RANK2: usize = 63 - ((MOD - 1) & (1 - MOD)).leading_zeros() as usize;
+
 struct FftInfo {
-    g: i64,
-    rank2: usize,
-    root: Vec<i64>,
-    iroot: Vec<i64>,
-    rate2: Vec<i64>,
-    irate2: Vec<i64>,
-    rate3: Vec<i64>,
-    irate3: Vec<i64>,
+    root: [ModInt; RANK2 + 1],
+    iroot: [ModInt; RANK2 + 1],
+    rate2: [ModInt; RANK2 - 2 + 1],
+    irate2: [ModInt; RANK2 - 2 + 1],
+    rate3: [ModInt; RANK2 - 3 + 1],
+    irate3: [ModInt; RANK2 - 3 + 1],
 }
 
 impl FftInfo {
-    fn new(m: i64) -> Self {
-        let g = primitive_root(m);
-        let rank2 = 63 - ((m - 1) & (1 - m)).leading_zeros() as usize;
-
-        let mut root = vec![0; rank2 + 1];
-        root[rank2] = pow_mod(g, (m - 1) >> rank2, m);
-        let mut iroot = vec![0; rank2 + 1];
-        iroot[rank2] = pow_mod(root[rank2], m - 2, m);
-        for i in (0..rank2).rev() {
-            root[i] = root[i + 1] * root[i + 1] % m;
-            iroot[i] = iroot[i + 1] * iroot[i + 1] % m;
+    fn new() -> Self {
+        let mut root = [ModInt::default(); RANK2 + 1];
+        root[RANK2] = ModInt::raw(G).pow(MOD - 1 >> RANK2);
+        let mut iroot = [ModInt::default(); RANK2 + 1];
+        iroot[RANK2] = root[RANK2].inv();
+        for i in (0..RANK2).rev() {
+            root[i] = root[i + 1] * root[i + 1];
+            iroot[i] = iroot[i + 1] * iroot[i + 1];
         }
-        let mut rate2 = vec![0; rank2 - 1];
-        let mut irate2 = vec![0; rank2 - 1];
-        let mut prod = 1;
-        let mut iprod = 1;
-        for i in 0..=(rank2 - 2) {
-            rate2[i] = root[i + 2] * prod % m;
-            irate2[i] = iroot[i + 2] * iprod % m;
+        let mut rate2 = [ModInt::default(); RANK2 - 1];
+        let mut irate2 = [ModInt::default(); RANK2 - 1];
+        let mut prod = ModInt::raw(1);
+        let mut iprod = ModInt::raw(1);
+        for i in 0..=(RANK2 - 2) {
+            rate2[i] = root[i + 2] * prod;
+            irate2[i] = iroot[i + 2] * iprod;
             prod *= iroot[i + 2];
-            prod %= m;
             iprod *= root[i + 2];
-            iprod %= m;
         }
-        let mut rate3 = vec![0; rank2 - 2];
-        let mut irate3 = vec![0; rank2 - 2];
-        let mut prod = 1;
-        let mut iprod = 1;
-        for i in 0..=(rank2 - 3) {
-            rate3[i] = root[i + 3] * prod % m;
-            irate3[i] = iroot[i + 3] * iprod % m;
+        let mut rate3 = [ModInt::default(); RANK2 - 2];
+        let mut irate3 = [ModInt::default(); RANK2 - 2];
+        let mut prod = ModInt::raw(1);
+        let mut iprod = ModInt::raw(1);
+        for i in 0..=(RANK2 - 3) {
+            rate3[i] = root[i + 3] * prod;
+            irate3[i] = iroot[i + 3] * iprod;
             prod *= iroot[i + 3];
-            prod %= m;
             iprod *= root[i + 3];
-            iprod %= m;
         }
         FftInfo {
-            g,
-            rank2,
             root,
             iroot,
             rate2,
