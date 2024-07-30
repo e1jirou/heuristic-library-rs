@@ -49,6 +49,7 @@ const fn is_prime_const(n: i32) -> bool {
     let mut i = 0;
     while i < 3 {
         let a = bases[i];
+        i += 1;
         let mut t = d;
         let mut y = pow_mod_const(a, t, n);
         while t != n as i64 - 1 && y != 1 && y != n as i64 - 1 {
@@ -58,7 +59,6 @@ const fn is_prime_const(n: i32) -> bool {
         if y != n as i64 - 1 && t % 2 == 0 {
             return false;
         }
-        i += 1
     }
     return true;
 }
