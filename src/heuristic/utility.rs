@@ -1,5 +1,14 @@
 use itertools::Itertools;
 
+pub fn print_slice<T: std::fmt::Display>(v: &[T]) {
+    use std::io::Write;
+    let mut handle = std::io::BufWriter::new(std::io::stdout().lock());
+    for i in 0..v.len() {
+        write!(handle, "{}{}", v[i], if i + 1 == v.len() { "\n" } else { " " }).unwrap();
+    }
+    handle.flush().unwrap();
+}
+
 pub trait ChangeMinMax {
     fn chmin(&mut self, x: Self) -> bool;
     fn chmax(&mut self, x: Self) -> bool;
