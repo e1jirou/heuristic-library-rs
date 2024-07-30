@@ -236,6 +236,12 @@ impl std::ops::Div for ModInt {
     }
 }
 
+impl Default for ModInt {
+    fn default() -> Self {
+        ModInt::raw(0)
+    }
+}
+
 impl PartialEq for ModInt {
     fn eq(&self, other: &Self) -> bool {
         self.v == other.v
