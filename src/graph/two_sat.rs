@@ -1,4 +1,4 @@
-use crate::graph::strongly_connected_components::StronglyConnectedComponents;
+use super::strongly_connected_components::StronglyConnectedComponents;
 
 pub struct TwoSat {
     n: usize,

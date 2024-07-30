@@ -1,4 +1,4 @@
-use crate::data_structure::dynamic_fenwick_tree::DynamicFenwickTree;
+use super::dynamic_fenwick_tree::DynamicFenwickTree;
 
 pub struct DynamicFenwickTree2D<T> {
     n: usize,
