@@ -2,6 +2,7 @@ use std::io::{self, Read};
 
 pub struct Input {
     iter: std::str::SplitAsciiWhitespace<'static>,
+    #[allow(unused)]
     buf: Box<str>,
 }
 
