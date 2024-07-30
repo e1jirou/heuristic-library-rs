@@ -275,3 +275,59 @@ const fn inv_gcd(a: i64, b: i64) -> (i64, i64) {
     }
     (s, m0)
 }
+
+pub const fn primitive_root_const(m: i32) -> i32 {
+    if m == 2 {
+        return 1;
+    }
+    if m == 167772161 {
+        return 3;
+    }
+    if m == 469762049 {
+        return 3;
+    }
+    if m == 754974721 {
+        return 11;
+    }
+    if m == 998244353 {
+        return 3;
+    }
+    let mut divs = [0; 20];
+    divs[0] = 2;
+    let mut cnt = 1;
+    let mut x = (m - 1) / 2;
+    while x % 2 == 0 {
+        x /= 2;
+    }
+    let mut i = 3;
+    while i * i <= x {
+        if x % i == 0 {
+            divs[cnt] = i;
+            cnt += 1;
+            while x % i == 0 {
+                x /= i;
+            }
+        }
+        i += 2;
+    }
+    if x > 1 {
+        divs[cnt] = x;
+        cnt += 1;
+    }
+    let mut g = 2;
+    loop {
+        let mut ok = true;
+        let mut i = 0;
+        while i < cnt {
+            if pow_mod_const(g, ((m - 1) / divs[i]) as i64, m) == 1 {
+                ok = false;
+                break;
+            }
+            i += 1;
+        }
+        if ok {
+            return g as i32;
+        }
+        g += 1;
+    }
+}
