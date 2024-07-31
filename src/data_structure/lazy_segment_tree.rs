@@ -27,8 +27,8 @@ impl <T: MapMonoid> LazySegmentTree<T> {
 
     pub fn from_vec(v: &[<T::M as Monoid>::S]) -> Self {
         let n = v.len();
-        let log = (64 - ((n as u64).saturating_sub(1).leading_zeros())) as usize;
-        let size = 1 << log;
+        let size = n.next_power_of_two();
+        let log = n.trailing_zeros() as usize;
         let d = vec![T::M::e(); 2 * size];
         let lz = vec![T::id(); size];
         let mut ret = LazySegmentTree {

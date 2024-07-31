@@ -180,7 +180,7 @@ fn convolution_naive(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
 fn convolution_fft(mut a: Vec<ModInt>, mut b: Vec<ModInt>) -> Vec<ModInt> {
     let n = a.len();
     let m = b.len();
-    let z = 1 << (32 - ((n + m - 1).saturating_sub(1) as u32).leading_zeros());  // bit ceil
+    let z = (n + m - 1).next_power_of_two();
 
     let info = FftInfo::new();
 
@@ -206,8 +206,8 @@ pub fn convolution(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
     if n == 0 || m == 0 {
         return Vec::new();
     }
-    let z = 1 << (32 - ((n + m - 1).saturating_sub(1) as u32).leading_zeros()); // bit ceil
-    debug_assert!((MOD - 1) % z == 0);
+    let z = (n + m - 1).next_power_of_two();
+    debug_assert!((MOD as usize - 1) % z == 0);
 
     if n.min(m) <= 60 {
         convolution_naive(a, b)

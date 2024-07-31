@@ -18,8 +18,8 @@ impl <M: Monoid> SegmentTree<M> {
 
     pub fn from_vec(v: &[M::S]) -> Self {
         let n = v.len();
-        let log = (64 - ((n as u64).saturating_sub(1).leading_zeros())) as usize;
-        let size = 1 << log;
+        let size = n.next_power_of_two();
+        let log = n.trailing_zeros() as usize;
         let d = vec![M::e(); 2 * size];
         let mut ret = SegmentTree {
             n,
