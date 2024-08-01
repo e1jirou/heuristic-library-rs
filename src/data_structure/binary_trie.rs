@@ -1,4 +1,3 @@
-#[derive(Default)]
 struct Node {
     children: [usize; 2],
     size: usize,  // subtree size
@@ -149,6 +148,7 @@ impl BinaryTrie {
         Some(ret)
     }
 
+    // return min before xor (argmin)
     pub fn xor_min(&self, x: u64) -> Option<u64> {
         debug_assert!(self.log == 64 || x < (1 << self.log));
         if self.is_empty() {
@@ -178,6 +178,7 @@ impl BinaryTrie {
         Some(ret)
     }
 
+    // return max before xor (argmax)
     pub fn xor_max(&self, x: u64) -> Option<u64> {
         debug_assert!(self.log == 64 || x < (1 << self.log));
         if self.is_empty() {
