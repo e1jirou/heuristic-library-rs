@@ -1,5 +1,6 @@
 use itertools::Itertools;
 
+// separate with " ", and end with "\n"
 pub fn print_slice<T: std::fmt::Display>(v: &[T]) {
     use std::io::Write;
     let mut handle = std::io::BufWriter::new(std::io::stdout().lock());

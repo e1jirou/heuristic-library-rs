@@ -47,6 +47,16 @@ impl<T: PartialOrd> ChangeMinMax for T {
     }
 }
 
+// separate with " ", and end with "\n"
+pub fn print_slice<T: std::fmt::Display>(v: &[T]) {
+    use std::io::Write;
+    let mut handle = std::io::BufWriter::new(std::io::stdout().lock());
+    for i in 0..v.len() {
+        write!(handle, "{}{}", v[i], if i + 1 == v.len() { "\n" } else { " " }).unwrap();
+    }
+    handle.flush().unwrap();
+}
+
 pub fn argmin<T: Ord>(v: &[T]) -> usize {
     debug_assert!(!v.is_empty());
     v.iter().enumerate().min_by_key(|&(_, x)| x).unwrap().0
