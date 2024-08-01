@@ -18,6 +18,13 @@ pub fn pow_mod(x: i64, mut n: i64, m: i32) -> i64 {
     r
 }
 
+pub fn inv_mod(x: i64, m: i64) -> i64 {
+    debug_assert!(m >= 1);
+    let z = inv_gcd(x, m);
+    debug_assert!(z.0 == 1);
+    z.1
+}
+
 // (rem, mod)
 pub fn crt(r: &[i64], m: &[i64]) -> (i64, i64) {
     debug_assert!(r.len() == m.len());
