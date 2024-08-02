@@ -68,10 +68,6 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
     fn change_to_non_negative_cost(&mut self, s: usize, cost: T) {
         debug_assert!(cost < T::zero());
 
-        if self.edges[s].iter().all(|e| e.cap == T::zero() || e.cost - self.dual[e.to] + self.dual[s] + cost >= T::zero()) {
-            self.dual[s] += cost;
-            return;
-        }
         let mut costs = vec![T::zero(); self.n];
         let mut que_min = Vec::new();
         let mut que: std::collections::BinaryHeap<std::cmp::Reverse<(T, usize)>> = std::collections::BinaryHeap::new();
@@ -109,7 +105,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         }
     }
 
-    // For speed-up, add edges to new vertices before adding edges from them.
+    // For speed-up, add edges to new vertices before adding edges from new vertices.
     pub fn add_edge(&mut self, from: usize, to: usize, cap: T, cost: T) {
         debug_assert!(from < self.n);
         debug_assert!(to < self.n);
@@ -119,6 +115,13 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
 
         let reduced_cost = cost + self.dual[from] - self.dual[to];
         if reduced_cost >= T::zero() {
+            // positive cost
+            self.internal_add_edge(from, to, cap, cost);
+            return;
+        }
+        if self.edges[to].iter().all(|e| e.cap == T::zero() || e.cost + self.dual[to] - self.dual[e.to] + reduced_cost >= T::zero()) {
+            // can update potential
+            self.dual[to] += reduced_cost;
             self.internal_add_edge(from, to, cap, cost);
             return;
         }
@@ -141,7 +144,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         let rev = self.edges[from][fwd].rev;
         self.edges[from][fwd].cap -= flow;
         self.edges[to][rev].cap += flow;
-        self.cost += flow * reduced_cost;
+        self.cost += cost * flow;
     }
 
     fn internal_remove_edge(&mut self, from: usize, fwd: usize) {
@@ -149,6 +152,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         debug_assert!(e_fwd.is_fwd);
         let to = e_fwd.to;
         let rev = e_fwd.rev;
+        let cost = e_fwd.cost;
         let flow = self.edges[to][rev].cap;
 
         self.edges[from].swap_remove(fwd);
@@ -163,7 +167,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         }
         self.supplies[from] += flow;
         self.supplies[to] -= flow;
-        self.cost -= e_fwd.cost * flow;
+        self.cost -= cost * flow;
     }
 
     pub fn remove_edge(&mut self, from: usize, to: usize) {
@@ -207,7 +211,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
     }
 
     // return the amount of the flow
-    pub fn flow_with_limits(&mut self, flow_limit: T, cost_limit: T) -> T {
+    fn flow_with_limits(&mut self, flow_limit: T, cost_limit: T) -> T {
         let sources: Vec<usize> = (0..self.n).filter(|&v| self.supplies[v] > T::zero()).collect();
         if sources.is_empty() {
             return T::zero();
@@ -226,7 +230,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
         let mut flow = T::zero();
 
         while flow < flow_limit {
-            dist.fill(T::max_value());
+            dist.fill(T::max_value() >> 1);
             vis.fill(false);
             que_min.clear();
             que.clear();
