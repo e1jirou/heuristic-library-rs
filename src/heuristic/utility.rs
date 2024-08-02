@@ -48,10 +48,10 @@ pub fn argsort<T: Ord>(v: &[T]) -> Vec<usize> {
 pub fn rperm(p: &[usize]) -> Vec<usize> {
     let n = p.len();
     let mut ret = vec![usize::MAX; n];
-    for i in 0..n {
-        debug_assert!(p[i] < n);
-        debug_assert!(ret[p[i]] == usize::MAX);
-        ret[p[i]] = i;
+    for (i, &x) in p.iter().enumerate() {
+        debug_assert!(x < n);
+        debug_assert!(ret[x] == usize::MAX);
+        ret[x] = i;
     }
     ret
 }
