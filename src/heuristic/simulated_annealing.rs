@@ -18,6 +18,8 @@ pub struct SimulatedAnnealingScheduler {
     temperature: f64,
     random_index: usize,
     log2_random: Vec<f64>,
+    trials: usize,
+    acceptances: usize,
 }
 
 impl SimulatedAnnealingScheduler {
@@ -49,11 +51,19 @@ impl SimulatedAnnealingScheduler {
             temperature: t_first,
             random_index: 0,
             log2_random,
+            trials: 0,
+            acceptances: 0,
         }
     }
 
     pub fn accept(&mut self, profit: f64) -> bool {
-        profit >= 0.0 || profit > self.get_threshold()
+        self.trials += 1;
+        if profit >= 0.0 || profit > self.get_threshold() {
+            self.acceptances += 1;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     pub fn get_threshold(&mut self) -> f64 {
@@ -79,5 +89,10 @@ impl SimulatedAnnealingScheduler {
             }
             SchedulerType::Linear => self.t_first * (1.0 - progress) + self.t_last * progress,
         }
+    }
+
+    pub fn print_log(&self) {
+        let acceptance_rate = self.acceptances as f64 / self.trials as f64;
+        dbg!(self.trials, self.acceptances, acceptance_rate);
     }
 }
