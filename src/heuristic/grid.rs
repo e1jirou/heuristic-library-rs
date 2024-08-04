@@ -40,7 +40,7 @@ impl Grid {
         }
     }
 
-    // vertical: &[[bool; h]; w - 1]
+    // vertical: &[[bool; w - 1]; h]
     // horizontal: &[[bool; w]; h - 1]
     pub fn from_walls(vertical: &[&[bool]], horizontal: &[&[bool]]) -> Self {
         debug_assert!(!horizontal.is_empty());
