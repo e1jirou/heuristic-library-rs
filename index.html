@@ -73,7 +73,7 @@
 			}
 			const csvText = await response.text();
 			const lines = csvText.trim().split('\n');
-			const headers = lines[0].split(',');
+			const headers = lines[0].split(',').map(h => h.trim());
 			const keys = headers.filter(h => h != 'file' && h != 'seed');
 			$('#input_keys').text(`features = {${keys}}`);
 			inputs = lines.slice(1).map(line => {
