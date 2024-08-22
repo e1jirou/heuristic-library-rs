@@ -51,7 +51,7 @@ struct SegmentTree {
 impl SegmentTree {
     fn new(n: usize) -> SegmentTree {
         let size = n.next_power_of_two();
-        let log = n.trailing_zeros() as usize;
+        let log = size.trailing_zeros() as usize;
         SegmentTree {
             n,
             log,

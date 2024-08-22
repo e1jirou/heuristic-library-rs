@@ -19,7 +19,7 @@ impl <M: Monoid> SegmentTree<M> {
     pub fn from_vec(v: &[M::S]) -> Self {
         let n = v.len();
         let size = n.next_power_of_two();
-        let log = n.trailing_zeros() as usize;
+        let log = size.trailing_zeros() as usize;
         let d = vec![M::e(); 2 * size];
         let mut ret = SegmentTree {
             n,
