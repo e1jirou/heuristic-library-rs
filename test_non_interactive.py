@@ -8,7 +8,7 @@
 #   └── tools
 #       ├── in/ # input
 #       ├── out/ # output
-#       └── target/release/tester # local visualizer
+#       └── target/release/vis # local visualizer
 
 
 COMPILE_CMD = "cargo build --release"
@@ -97,7 +97,8 @@ def task(seed, in_path, out_path):
 
     ret = Result(seed, in_path, -1, time_elapsed_sec)
     std_out = res.stdout.decode("utf-8", "ignore")
-    for out in std_out.split("\n"):
+    std_err = res.stderr.decode("utf-8", "ignore")
+    for out in (std_out + "\n" + std_err).split("\n"):
         if SCORE_TEXT in out:
             ret.score = int(out.split(SCORE_TEXT)[1])
             break
