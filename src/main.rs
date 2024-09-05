@@ -57,16 +57,6 @@ pub fn print_slice<T: std::fmt::Display>(v: &[T]) {
     handle.flush().unwrap();
 }
 
-pub fn argmin<T: Ord>(v: &[T]) -> usize {
-    debug_assert!(!v.is_empty());
-    v.iter().enumerate().min_by_key(|&(_, x)| x).unwrap().0
-}
-
-pub fn argmax<T: Ord>(v: &[T]) -> usize {
-    debug_assert!(!v.is_empty());
-    v.iter().enumerate().max_by_key(|&(_, x)| x).unwrap().0
-}
-
 pub fn argsort<T: Ord>(v: &[T]) -> Vec<usize> {
     (0..v.len()).sorted_by_key(|&i| &v[i]).collect()
 }
