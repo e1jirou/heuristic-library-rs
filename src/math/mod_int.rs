@@ -3,7 +3,7 @@ pub const MOD: i64 = 998244353;
 const UMOD: u32 = MOD as u32;
 const PRIME: bool = is_prime_const(UMOD as i32);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct ModInt {
     v: u32,
 }
