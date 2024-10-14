@@ -6,6 +6,7 @@ pub mod dynamic_fenwick_tree;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree_2d;
 pub mod fenwick_tree;
+pub mod hash_map;
 pub mod index_set;
 pub mod interval_heap;
 pub mod lazy_segment_tree;
