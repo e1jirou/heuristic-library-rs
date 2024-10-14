@@ -99,7 +99,7 @@ impl SegmentTree {
 struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
-    hash_to_index: std::collections::HashMap<Hash,usize>,
+    hash_to_index: rustc_hash::FxHashMap<Hash,usize>,
     segtree: SegmentTree,
     finished_candidate: Option<Candidate>,
 }
@@ -109,7 +109,7 @@ impl Selector {
         Selector {
             beam_width,
             candidates: Vec::with_capacity(beam_width),
-            hash_to_index: std::collections::HashMap::with_capacity(beam_width),
+            hash_to_index: rustc_hash::FxHashMap::default(),
             segtree: SegmentTree::new(beam_width),
             finished_candidate: None,
         }
