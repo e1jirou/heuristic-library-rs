@@ -9,7 +9,7 @@ impl<V: Clone> ChainHashMap<V> {
     pub fn new(capacity: usize, seed: u64) -> Self {
         use rand::{Rng, SeedableRng};
         let mut rng = rand_pcg::Mcg128Xsl64::seed_from_u64(seed);
-        let capacity = rng.gen_range((4 * capacity)..(8 * capacity));
+        let capacity = rng.gen_range((2 * capacity)..(4 * capacity));
         let xor = rng.gen_range(0..=usize::MAX);
         Self {
             capacity,
