@@ -7,7 +7,7 @@ pub fn gcd<T: num_traits::PrimInt>(a: T, b: T) -> T {
 }
 
 pub fn lcm<T: num_traits::PrimInt>(a: T, b: T) -> T {
-    debug_assert!(a == T::zero() && b == T::zero());
+    debug_assert!(a != T::zero() && b != T::zero());
     let g = gcd(a, b);
     (a / g) * b
 }
