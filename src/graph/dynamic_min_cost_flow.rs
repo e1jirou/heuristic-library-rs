@@ -239,6 +239,7 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                 if self.supplies[s] > T::zero() {
                     let cost = -self.dual[s];
                     dist[s] = cost;
+                    prev_e[s] = usize::MAX;
                     que.push(std::cmp::Reverse((cost, s)));
                 }
             }
@@ -290,27 +291,31 @@ where T: std::fmt::Debug + num_traits::NumAssign + num_traits::PrimInt + std::op
                 }
                 self.dual[v] -= dist[t] - dist[v];
             }
-            let mut c = (flow_limit - flow).min(-self.supplies[t]);
+            // restore path
+            let mut f = (flow_limit - flow).min(-self.supplies[t]);
             let mut v = t;
-            while self.supplies[v] <= T::zero() {
+            while prev_e[v] != usize::MAX {
                 let e = &self.edges[v][prev_e[v]];
-                c = c.min(self.edges[e.to][e.rev].cap);
+                f = f.min(self.edges[e.to][e.rev].cap);
                 v = e.to;
             }
             let s = v;
-            c = c.min(self.supplies[s]);
-            v = t;
-            while self.supplies[v] <= T::zero() {
-                self.edges[v][prev_e[v]].cap += c;
+            debug_assert!(self.supplies[s] > T::zero());
+            f = f.min(self.supplies[s]);
+
+            // update capacity
+            let mut v = t;
+            while v != s {
+                self.edges[v][prev_e[v]].cap += f;
                 let fwd = self.edges[v][prev_e[v]].rev;
                 v = self.edges[v][prev_e[v]].to;
-                self.edges[v][fwd].cap -= c;
+                self.edges[v][fwd].cap -= f;
             }
             let d = self.dual[t] - self.dual[s];
-            flow += c;
-            self.cost += c * d;
-            self.supplies[s] -= c;
-            self.supplies[t] += c;
+            flow += f;
+            self.cost += f * d;
+            self.supplies[s] -= f;
+            self.supplies[t] += f;
         }
         flow
     }
