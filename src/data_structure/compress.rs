@@ -3,25 +3,12 @@ pub struct Compress<T> {
 }
 
 impl<T: Clone + Copy + Ord> Compress<T> {
-    pub fn new() -> Self {
+    pub fn new(mut data: Vec<T>) -> Self {
+        data.sort();
+        data.dedup();
         Compress {
-            data: Vec::new(),
+            data,
         }
-    }
-
-    pub fn with_capacity(capacity: usize) -> Self {
-        Compress {
-            data: Vec::with_capacity(capacity)
-        }
-    }
-
-    pub fn push(&mut self, x: T) {
-        self.data.push(x);
-    }
-
-    pub fn build(&mut self) {
-        self.data.sort();
-        self.data.dedup();
     }
 
     pub fn len(&self) -> usize {
