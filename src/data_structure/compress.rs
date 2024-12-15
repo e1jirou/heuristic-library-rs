@@ -2,7 +2,7 @@ pub struct Compress<T> {
     data: Vec<T>,
 }
 
-impl<T: Ord> Compress<T> {
+impl<T: Clone + Copy + Ord> Compress<T> {
     pub fn new() -> Self {
         Compress {
             data: Vec::new(),
@@ -30,5 +30,9 @@ impl<T: Ord> Compress<T> {
 
     pub fn get(&self, x: T) -> Result<usize, usize> {
         self.data.binary_search(&x)
+    }
+
+    pub fn bisect(&self, x: T) -> usize {
+        self.data.partition_point(|&y| y < x)
     }
 }
