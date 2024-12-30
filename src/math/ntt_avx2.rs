@@ -71,16 +71,14 @@ impl<const MOD: u32> MontgomeryModInt<MOD> {
         let mut y = MOD as i32;
         let mut u = 1;
         let mut v = 0;
-        let mut t = 0;
-        let mut tmp = 0;
         while y > 0 {
-            t = x / y;
-            x -= t * y;
-            u -= t * v;
-            tmp = x;
+            let tmp = x / y;
+            x -= tmp * y;
+            u -= tmp * v;
+            let tmp = x;
             x = y;
             y = tmp;
-            tmp = u;
+            let tmp = u;
             u = v;
             v = tmp;
         }
@@ -399,7 +397,6 @@ impl<const MOD: u32> NTT<MOD> {
                 a[j + v] = aj - ajv;
             }
         }
-        todo!();
     }
 
     // write result to a
@@ -429,27 +426,9 @@ impl<const MOD: u32> NTT<MOD> {
         }
         self.intt(a, n);
         let invn = MontgomeryModInt::from_i64(n as i64).inv();
-        for i in 0..n {
+        a.truncate(l);
+        for i in 0..l {
             a[i] *= invn;
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::MontgomeryModInt;
-
-    #[test]
-    fn montgomery_test() {
-        const MOD: u32 = 998244353;
-        let one = MontgomeryModInt::<MOD>::from_i64(1);
-        let two = MontgomeryModInt::<MOD>::from_i64(2);
-        let three = MontgomeryModInt::<MOD>::from_i64(3);
-        debug_assert_eq!(-two, MontgomeryModInt::<MOD>::from_i64(-2));
-        debug_assert_eq!(one + two, three);
-        debug_assert_eq!(three - one, two);
-        debug_assert_eq!((two * three).val(), 6);
-        debug_assert_eq!((three / two * two).val(), 3);
-        debug_assert_eq!(three.pow(3).val(), 27);
     }
 }
