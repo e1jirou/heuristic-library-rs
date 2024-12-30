@@ -1,42 +1,43 @@
-use super::mod_int::{MOD, ModInt, primitive_root_const};
+use super::mod_int::{ModInt, primitive_root_const};
 
-const G: u32 = primitive_root_const(MOD as i32) as u32;
-const RANK2: usize = (MOD - 1).trailing_zeros() as usize;
+const MAX_RANK2: usize = 31;
 
-struct FftInfo {
-    root: [ModInt; RANK2 + 1],
-    iroot: [ModInt; RANK2 + 1],
-    rate2: [ModInt; RANK2 - 2 + 1],
-    irate2: [ModInt; RANK2 - 2 + 1],
-    rate3: [ModInt; RANK2 - 3 + 1],
-    irate3: [ModInt; RANK2 - 3 + 1],
+struct FftInfo<const MOD: u32> {
+    root: [ModInt<MOD>; MAX_RANK2 + 1],
+    iroot: [ModInt<MOD>; MAX_RANK2 + 1],
+    rate2: [ModInt<MOD>; MAX_RANK2 - 2 + 1],
+    irate2: [ModInt<MOD>; MAX_RANK2 - 2 + 1],
+    rate3: [ModInt<MOD>; MAX_RANK2 - 3 + 1],
+    irate3: [ModInt<MOD>; MAX_RANK2 - 3 + 1],
 }
 
-impl FftInfo {
+impl<const MOD: u32> FftInfo<MOD> {
     fn new() -> Self {
-        let mut root = [ModInt::zero(); RANK2 + 1];
-        root[RANK2] = ModInt::raw(G).pow(MOD - 1 >> RANK2);
-        let mut iroot = [ModInt::zero(); RANK2 + 1];
-        iroot[RANK2] = root[RANK2].inv();
-        for i in (0..RANK2).rev() {
+        let rank2: usize = (MOD - 1).trailing_zeros() as usize;
+        let mut root = [ModInt::zero(); MAX_RANK2 + 1];
+        let g: u32 = primitive_root_const(MOD as i32) as u32;
+        root[rank2] = ModInt::raw(g).pow(MOD as i64 - 1 >> rank2);
+        let mut iroot = [ModInt::zero(); MAX_RANK2 + 1];
+        iroot[rank2] = root[rank2].inv();
+        for i in (0..rank2).rev() {
             root[i] = root[i + 1] * root[i + 1];
             iroot[i] = iroot[i + 1] * iroot[i + 1];
         }
-        let mut rate2 = [ModInt::zero(); RANK2 - 1];
-        let mut irate2 = [ModInt::zero(); RANK2 - 1];
+        let mut rate2 = [ModInt::zero(); MAX_RANK2 - 1];
+        let mut irate2 = [ModInt::zero(); MAX_RANK2 - 1];
         let mut prod = ModInt::one();
         let mut iprod = ModInt::one();
-        for i in 0..=(RANK2 - 2) {
+        for i in 0..=(rank2 - 2) {
             rate2[i] = root[i + 2] * prod;
             irate2[i] = iroot[i + 2] * iprod;
             prod *= iroot[i + 2];
             iprod *= root[i + 2];
         }
-        let mut rate3 = [ModInt::zero(); RANK2 - 2];
-        let mut irate3 = [ModInt::zero(); RANK2 - 2];
+        let mut rate3 = [ModInt::zero(); MAX_RANK2 - 2];
+        let mut irate3 = [ModInt::zero(); MAX_RANK2 - 2];
         let mut prod = ModInt::one();
         let mut iprod = ModInt::one();
-        for i in 0..=(RANK2 - 3) {
+        for i in 0..=(rank2 - 3) {
             rate3[i] = root[i + 3] * prod;
             irate3[i] = iroot[i + 3] * iprod;
             prod *= iroot[i + 3];
@@ -53,7 +54,7 @@ impl FftInfo {
     }
 }
 
-fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
+fn butterfly<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) {
     let n = a.len();
     let h = n.trailing_zeros() as i32;
 
@@ -90,7 +91,7 @@ fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
                     let a1 = a[i + offset + p].val() as u64 * rot.val() as u64;
                     let a2 = a[i + offset + 2 * p].val() as u64 * rot2.val() as u64;
                     let a3 = a[i + offset + 3 * p].val() as u64 * rot3.val() as u64;
-                    let a1na3imag = ModInt::from_u64(a1 + mod2 - a3).val() as u64 * imag.val() as u64;
+                    let a1na3imag = ModInt::<MOD>::from_u64(a1 + mod2 - a3).val() as u64 * imag.val() as u64;
                     let na2 = mod2 - a2;
                     a[i + offset] = ModInt::from_u64(a0 + a2 + a1 + a3);
                     a[i + offset + p] = ModInt::from_u64(a0 + a2 + (2 * mod2 - (a1 + a3)));
@@ -106,7 +107,7 @@ fn butterfly(a: &mut Vec<ModInt>, info: &FftInfo) {
     }
 }
 
-fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
+fn butterfly_inv<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) {
     let n = a.len();
     let h = n.trailing_zeros() as i32;
 
@@ -121,7 +122,7 @@ fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
                     let l = a[i + offset];
                     let r = a[i + offset + p];
                     a[i + offset] = l + r;
-                    a[i + offset + p] = ModInt::from_u64((MOD + l.val() as i64 - r.val() as i64) as u64 * irot.val() as u64);
+                    a[i + offset + p] = ModInt::from_u64((MOD as i64 + l.val() as i64 - r.val() as i64) as u64 * irot.val() as u64);
                 }
                 if s + 1 != (1 << (len - 1)) {
                     irot *= info.irate2[(!(s as u32)).trailing_zeros() as usize];
@@ -142,7 +143,7 @@ fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
                     let a1 = a[i + offset + p].val() as u64;
                     let a2 = a[i + offset + 2 * p].val() as u64;
                     let a3 = a[i + offset + 3 * p].val() as u64;
-                    let a2na3iimag = ModInt::from_u64((MOD as u64 + a2 - a3) * iimag.val() as u64).val() as u64;
+                    let a2na3iimag = ModInt::<MOD>::from_u64((MOD as u64 + a2 - a3) * iimag.val() as u64).val() as u64;
                     a[i + offset] = ModInt::from_u64(a0 + a1 + a2 + a3);
                     a[i + offset + p] = ModInt::from_u64((a0 + (MOD as u64 - a1) + a2na3iimag) * irot.val() as u64);
                     a[i + offset + 2 * p] = ModInt::from_u64((a0 + a1 + (MOD as u64 - a2) + (MOD as u64 - a3)) * irot2.val() as u64);
@@ -157,7 +158,7 @@ fn butterfly_inv(a: &mut Vec<ModInt>, info: &FftInfo) {
     }
 }
 
-fn convolution_naive(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
+fn convolution_naive<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Vec<ModInt<MOD>> {
     let n = a.len();
     let m = b.len();
     let mut ans = vec![ModInt::zero(); n + m - 1];
@@ -177,7 +178,7 @@ fn convolution_naive(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
     ans
 }
 
-fn convolution_fft(mut a: Vec<ModInt>, mut b: Vec<ModInt>) -> Vec<ModInt> {
+fn convolution_fft<const MOD: u32>(mut a: Vec<ModInt<MOD>>, mut b: Vec<ModInt<MOD>>) -> Vec<ModInt<MOD>> {
     let n = a.len();
     let m = b.len();
     let z = (n + m - 1).next_power_of_two();
@@ -200,7 +201,7 @@ fn convolution_fft(mut a: Vec<ModInt>, mut b: Vec<ModInt>) -> Vec<ModInt> {
     a
 }
 
-pub fn convolution(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
+pub fn convolution<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Vec<ModInt<MOD>> {
     let n = a.len();
     let m = b.len();
     if n == 0 || m == 0 {

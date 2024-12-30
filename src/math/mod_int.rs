@@ -1,17 +1,12 @@
-pub const MOD: i64 = 998244353;
-
-const UMOD: u32 = MOD as u32;
-const PRIME: bool = is_prime_const(UMOD as i32);
-
 #[derive(Clone, Copy, Debug)]
-pub struct ModInt {
+pub struct ModInt<const MOD: u32> {
     v: u32,
 }
 
-impl ModInt {
+impl<const MOD: u32> ModInt<MOD> {
     pub fn from_i64(v: i64) -> Self {
         ModInt {
-            v: safe_mod(v, MOD) as u32,
+            v: safe_mod(v, MOD as i64) as u32,
         }
     }
 
@@ -36,7 +31,7 @@ impl ModInt {
     }
 
     pub fn raw(v: u32) -> Self {
-        debug_assert!(v < UMOD);
+        debug_assert!(v < MOD);
         ModInt {
             v,
         }
@@ -61,60 +56,60 @@ impl ModInt {
     }
 
     pub fn inv(&self) -> Self {
-        if PRIME {
+        if is_prime_const(MOD as i32) {
             debug_assert!(self.v > 0);
-            self.pow(MOD - 2)
+            self.pow(MOD as i64 - 2)
         } else {
-            let eg = inv_gcd(self.v as i64, MOD);
+            let eg = inv_gcd(self.v as i64, MOD as i64);
             debug_assert!(eg.0 == 1);
             Self::from_i64(eg.1)
         }
     }
 }
 
-impl std::ops::AddAssign for ModInt {
+impl<const MOD: u32> std::ops::AddAssign for ModInt<MOD> {
     fn add_assign(&mut self, rhs: Self) {
         self.v += rhs.v;
-        if self.v >= UMOD {
-            self.v -= UMOD;
+        if self.v >= MOD {
+            self.v -= MOD;
         }
     }
 }
 
-impl std::ops::SubAssign for ModInt {
+impl<const MOD: u32> std::ops::SubAssign for ModInt<MOD> {
     fn sub_assign(&mut self, rhs: Self) {
         if self.v < rhs.v {
-            self.v += UMOD;
+            self.v += MOD;
         }
         self.v -= rhs.v;
     }
 }
 
-impl std::ops::MulAssign for ModInt {
+impl<const MOD: u32> std::ops::MulAssign for ModInt<MOD> {
     fn mul_assign(&mut self, rhs: Self) {
         self.v = (self.v as u64 * rhs.v as u64 % MOD as u64) as u32;
     }
 }
 
-impl std::ops::DivAssign for ModInt {
+impl<const MOD: u32> std::ops::DivAssign for ModInt<MOD> {
     fn div_assign(&mut self, rhs: Self) {
         *self *= rhs.inv();
     }
 }
 
-impl std::ops::Neg for ModInt {
+impl<const MOD: u32> std::ops::Neg for ModInt<MOD> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
         if self.v == 0 {
             Self::zero()
         } else {
-            Self::raw(UMOD - self.v)
+            Self::raw(MOD - self.v)
         }
     }
 }
 
-impl std::ops::Add for ModInt {
+impl<const MOD: u32> std::ops::Add for ModInt<MOD> {
     type Output = Self;
 
     fn add(mut self, rhs: Self) -> Self {
@@ -123,7 +118,7 @@ impl std::ops::Add for ModInt {
     }
 }
 
-impl std::ops::Sub for ModInt {
+impl<const MOD: u32> std::ops::Sub for ModInt<MOD> {
     type Output = Self;
     
     fn sub(mut self, rhs: Self) -> Self::Output {
@@ -132,7 +127,7 @@ impl std::ops::Sub for ModInt {
     }
 }
 
-impl std::ops::Mul for ModInt {
+impl<const MOD: u32> std::ops::Mul for ModInt<MOD> {
     type Output = Self;
 
     fn mul(mut self, rhs: Self) -> Self::Output {
@@ -141,7 +136,7 @@ impl std::ops::Mul for ModInt {
     }
 }
 
-impl std::ops::Div for ModInt {
+impl<const MOD: u32> std::ops::Div for ModInt<MOD> {
     type Output = Self;
 
     fn div(mut self, rhs: Self) -> Self::Output {
@@ -150,21 +145,21 @@ impl std::ops::Div for ModInt {
     }
 }
 
-impl Default for ModInt {
+impl<const MOD: u32> Default for ModInt<MOD> {
     fn default() -> Self {
         ModInt::zero()
     }
 }
 
-impl PartialEq for ModInt {
+impl<const MOD: u32> PartialEq for ModInt<MOD> {
     fn eq(&self, other: &Self) -> bool {
         self.v == other.v
     }
 }
 
-impl Eq for ModInt {}
+impl<const MOD: u32> Eq for ModInt<MOD> {}
 
-impl std::fmt::Display for ModInt {
+impl<const MOD: u32> std::fmt::Display for ModInt<MOD> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.v)
     }
