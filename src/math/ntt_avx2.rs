@@ -1,6 +1,6 @@
 #[derive(Clone, Copy, Debug)]
 pub struct MontgomeryModInt<const MOD: u32> {
-    v: u32,
+    pub v: u32,
 }
 
 impl<const MOD: u32> MontgomeryModInt<MOD> {
@@ -170,14 +170,132 @@ impl<const MOD: u32> std::fmt::Display for MontgomeryModInt<MOD> {
     }
 }
 
+// return x mod m
+pub const fn safe_mod(mut x: i64, m: i64) -> i64 {
+    debug_assert!(m >= 1);
+    x %= m;
+    if x < 0 {
+        x += m;
+    }
+    x
+}
+
+// return `(x ** n) % m`
+pub const fn pow_mod_const(x: i64, mut n: i64, m: i32) -> i64 {
+    debug_assert!(n >= 0);
+    debug_assert!(m >= 1);
+    if m == 1 {
+        return 0;
+    }
+    let mut r = 1;
+    let mut y = safe_mod(x, m as i64) as u64;
+    while n != 0 {
+        if (n & 1) > 0 {
+            r = (r * y) % (m as u64);
+        }
+        y = (y * y) % (m as u64);
+        n >>= 1;
+    }
+    r as i64
+}
+
+pub const fn primitive_root_const(m: i32) -> i32 {
+    if m == 2 {
+        return 1;
+    }
+    if m == 167772161 {
+        return 3;
+    }
+    if m == 469762049 {
+        return 3;
+    }
+    if m == 754974721 {
+        return 11;
+    }
+    if m == 998244353 {
+        return 3;
+    }
+    let mut divs = [0; 20];
+    divs[0] = 2;
+    let mut cnt = 1;
+    let mut x = (m - 1) / 2;
+    while x % 2 == 0 {
+        x /= 2;
+    }
+    let mut i = 3;
+    while i * i <= x {
+        if x % i == 0 {
+            divs[cnt] = i;
+            cnt += 1;
+            while x % i == 0 {
+                x /= i;
+            }
+        }
+        i += 2;
+    }
+    if x > 1 {
+        divs[cnt] = x;
+        cnt += 1;
+    }
+    let mut g = 2;
+    loop {
+        let mut ok = true;
+        let mut i = 0;
+        while i < cnt {
+            if pow_mod_const(g, ((m - 1) / divs[i]) as i64, m) == 1 {
+                ok = false;
+                break;
+            }
+            i += 1;
+        }
+        if ok {
+            return g as i32;
+        }
+        g += 1;
+    }
+}
+
 pub struct NTT<const MOD: u32> {
+    pr: u32,
+    level: usize,
     dw: Vec<MontgomeryModInt<MOD>>,
     dy: Vec<MontgomeryModInt<MOD>>,
-    buf1: Vec<u32>,
-    buf2: Vec<u32>,
 }
 
 impl<const MOD: u32> NTT<MOD> {
+    pub fn new() -> Self {
+        let level = (MOD - 1).trailing_zeros() as usize;
+        let mut ret = Self {
+            pr: primitive_root_const(MOD as i32) as u32,
+            level,
+            dw: vec![MontgomeryModInt::zero(); level],
+            dy: vec![MontgomeryModInt::zero(); level],
+        };
+        ret.setwy();
+        ret
+    }
+
+    fn setwy(&mut self) {
+        let mut w = vec![MontgomeryModInt::zero(); self.level];
+        let mut y = vec![MontgomeryModInt::zero(); self.level];
+        w[self.level - 1] = MontgomeryModInt::from_i64(self.pr as i64).pow(((MOD - 1) / (1 << self.level)) as u64);
+        y[self.level - 1] = w[self.level - 1].inv();
+        for i in (1..(self.level - 2)).rev() {
+            w[i] = w[i + 1] * w[i + 1];
+            y[i] = y[i + 1] * y[i + 1];
+        }
+        self.dw[0] = w[1] * w[1];
+        self.dy[0] = self.dw[0];
+        self.dw[1] = w[1];
+        self.dy[1] = y[1];
+        self.dw[2] = w[2];
+        self.dy[2] = y[2];
+        for i in 3..self.level {
+            self.dw[i] = self.dw[i - 1] * y[i - 2] * w[i];
+            self.dy[i] = self.dy[i - 1] * w[i - 2] * w[i];
+        }
+    }
+
     pub fn ntt(a: &mut Vec<u32>, n: usize) {
         todo!();
     }
