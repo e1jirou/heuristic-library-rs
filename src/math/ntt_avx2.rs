@@ -1,3 +1,15 @@
+// size: bytes
+// align: bytes
+// return empty vector
+pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
+    let capacity = size / size_of::<T>();
+    unsafe {
+        let layout = std::alloc::Layout::from_size_align_unchecked(size, align);
+        let ptr = std::alloc::alloc(layout);
+        Vec::from_raw_parts(ptr as *mut T, 0, capacity)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct MontgomeryModInt<const MOD: u32> {
     pub v: u32,
@@ -262,13 +274,164 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
-    pub fn ntt(a: &mut Vec<u32>, n: usize) {
+    pub fn ntt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+        if n <= 1 {
+            return;
+        }
+        let k = n.trailing_zeros();
+        if k == 1 {
+            let a1 = a[1];
+            a[1] = a[0] - a1;
+            a[0] = a[0] + a1;
+            return;
+        }
+        // 2-base
+        if k & 1 == 1 {
+            let v = 1 << (k - 1);
+            for j in 0..v {
+                let aj = a[j];
+                let ajv = a[j + v];
+                a[j] = aj + ajv;
+                a[j + v] = aj - ajv;
+            }
+        }
+        // 4-base
+        let mut u = 1 << (2 + (k & 1));
+        let mut v = 1 << (k - 2 - (k & 1));
+        let one = MontgomeryModInt::one();
+        let imag = self.dw[1];
+        while v > 0 {
+            let mut xx = one;
+            let mut jh = 0;
+            while jh < u {
+                let ww = xx * xx;
+                let wx = ww * xx;
+                let mut j0 = jh * v;
+                let mut j1 = j0 + v;
+                let mut j2 = j1 + v;
+                let mut j3 = j2 + v;
+                let je = j1;
+                while j0 < je {
+                    let t0 = a[j0];
+                    let t1 = a[j1] * xx;
+                    let t2 = a[j2] * ww;
+                    let t3 = a[j3] * wx;
+                    let t0p2 = t0 + t2;
+                    let t1p3 = t1 + t3;
+                    let t0m2 = t0 - t2;
+                    let t1m3 = (t1 - t3) * imag;
+                    a[j0] = t0p2 + t1p3;
+                    a[j1] = t0p2 - t1p3;
+                    a[j2] = t0m2 + t1m3;
+                    a[j3] = t0m2 - t1m3;
+                    j0 += 8;
+                    j1 += 8;
+                    j2 += 8;
+                    j3 += 8;
+                }
+                jh += 4;
+                xx *= self.dw[jh.trailing_zeros() as usize];
+            }
+            u <<= 2;
+            v >>= 2;
+        }
+    }
 
+    pub fn intt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+        if n <= 1 {
+            return;
+        }
+        let k = n.trailing_zeros();
+        if k == 1 {
+            let a1 = a[1];
+            a[1] = a[0] - a1;
+            a[0] = a[0] + a1;
+            return;
+        }
+        // 4-base
+        let mut u = 1 << (k - 2);
+        let mut v = 1;
+        let one = MontgomeryModInt::one();
+        let imag = self.dy[1];
+        while u > 0 {
+            u <<= 2;
+            let mut xx = one;
+            let mut jh = 0;
+            while jh < u {
+                let ww = xx * xx;
+                let yy = xx * imag;
+                let mut j0 = jh * v;
+                let mut j1 = j0 + v;
+                let mut j2 = j1 + v;
+                let mut j3 = j2 + v;
+                let je = j1;
+                while j0 < je {
+                    let t0 = a[j0];
+                    let t1 = a[j1];
+                    let t2 = a[j2];
+                    let t3 = a[j3];
+                    let t0p1 = t0 + t1;
+                    let t2p3 = t2 + t3;
+                    let t0m1 = (t0 - t1) * xx;
+                    let t2m3 = (t2 - t3) * yy;
+                    a[j0] = t0p1 + t2p3;
+                    a[j1] = (t0p1 - t2p3) * ww;
+                    a[j2] = t0m1 + t2m3;
+                    a[j3] = (t0m1 - t2m3) * ww;
+                    j0 += 8;
+                    j1 += 8;
+                    j2 += 8;
+                    j3 += 8;
+                }
+                jh += 4;
+                xx *= self.dy[jh.trailing_zeros() as usize];
+            }
+            u >>= 4;
+            v <<= 2;
+        }
+        // 2-base
+        if k & 1 == 1 {
+            let v = 1 << (k - 1);
+            for j in 0..v {
+                let aj = a[j];
+                let ajv = a[j + v];
+                a[j] = aj + ajv;
+                a[j + v] = aj - ajv;
+            }
+        }
         todo!();
     }
 
-    pub fn intt(a: &mut Vec<u32>, n: usize) {
-        todo!();
+    // write result to a
+    pub fn multiply(&self, a: &mut Vec<MontgomeryModInt<MOD>>, b: &mut Vec<MontgomeryModInt<MOD>>) {
+        if a.is_empty() || b.is_empty() {
+            a.clear();
+            return;
+        }
+        let l = a.len() + b.len() - 1;
+        if a.len().min(b.len()) <= 40 {
+            let mut s = vec![MontgomeryModInt::zero(); l];
+            for i in 0..a.len() {
+                for j in 0..b.len() {
+                    s[i + j] += a[i] * b[j];
+                }
+            }
+            std::mem::swap(a, &mut s);
+            return;
+        }
+        let n = l.next_power_of_two();
+        a.resize(n, MontgomeryModInt::zero());
+        self.ntt(a, n);
+        b.resize(n, MontgomeryModInt::zero());
+        self.ntt(b, n);
+        for i in 0..n {
+            a[i] *= b[i];
+        }
+        self.intt(a, n);
+        let invn = MontgomeryModInt::from_i64(n as i64).inv();
+        for i in 0..n {
+            a[i] *= invn;
+        }
     }
 }
 
