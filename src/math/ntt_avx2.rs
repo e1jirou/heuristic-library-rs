@@ -197,9 +197,11 @@ mod tests {
         let one = MontgomeryModInt::<MOD>::from_i64(1);
         let two = MontgomeryModInt::<MOD>::from_i64(2);
         let three = MontgomeryModInt::<MOD>::from_i64(3);
+        debug_assert_eq!(-two, MontgomeryModInt::<MOD>::from_i64(-2));
         debug_assert_eq!(one + two, three);
         debug_assert_eq!(three - one, two);
         debug_assert_eq!((two * three).val(), 6);
         debug_assert_eq!((three / two * two).val(), 3);
+        debug_assert_eq!(three.pow(3).val(), 27);
     }
 }
