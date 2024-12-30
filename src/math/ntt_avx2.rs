@@ -170,89 +170,55 @@ impl<const MOD: u32> std::fmt::Display for MontgomeryModInt<MOD> {
     }
 }
 
-// return x mod m
-pub const fn safe_mod(mut x: i64, m: i64) -> i64 {
-    debug_assert!(m >= 1);
-    x %= m;
-    if x < 0 {
-        x += m;
-    }
-    x
-}
-
-// return `(x ** n) % m`
-pub const fn pow_mod_const(x: i64, mut n: i64, m: i32) -> i64 {
-    debug_assert!(n >= 0);
-    debug_assert!(m >= 1);
-    if m == 1 {
-        return 0;
-    }
-    let mut r = 1;
-    let mut y = safe_mod(x, m as i64) as u64;
-    while n != 0 {
-        if (n & 1) > 0 {
-            r = (r * y) % (m as u64);
-        }
-        y = (y * y) % (m as u64);
-        n >>= 1;
-    }
-    r as i64
-}
-
-pub const fn primitive_root_const(m: i32) -> i32 {
-    if m == 2 {
+const fn get_pr(mod_: u32) -> u32 {
+    if mod_ == 2 {
         return 1;
     }
-    if m == 167772161 {
-        return 3;
-    }
-    if m == 469762049 {
-        return 3;
-    }
-    if m == 754974721 {
-        return 11;
-    }
-    if m == 998244353 {
-        return 3;
-    }
-    let mut divs = [0; 20];
-    divs[0] = 2;
-    let mut cnt = 1;
-    let mut x = (m - 1) / 2;
-    while x % 2 == 0 {
-        x /= 2;
-    }
-    let mut i = 3;
-    while i * i <= x {
-        if x % i == 0 {
-            divs[cnt] = i;
-            cnt += 1;
-            while x % i == 0 {
-                x /= i;
+    let mut ds = [0; 32];
+    let mut idx = 0;
+    let mut m = mod_ as u64 - 1;
+    let mut i = 2;
+    while i * i <= m {
+        if m % i == 0 {
+            ds[idx] = i;
+            idx += 1;
+            while m % i == 0 {
+                m /= i;
             }
         }
-        i += 2;
+        i += 1;
     }
-    if x > 1 {
-        divs[cnt] = x;
-        cnt += 1;
+    if m != 1 {
+        ds[idx] = m;
+        idx += 1;
     }
-    let mut g = 2;
+    let mut pr = 2;
     loop {
-        let mut ok = true;
+        let mut flg = true;
         let mut i = 0;
-        while i < cnt {
-            if pow_mod_const(g, ((m - 1) / divs[i]) as i64, m) == 1 {
-                ok = false;
+        while i < idx {
+            let mut a = pr as u64;
+            let mut b = (mod_ as u64 - 1) / ds[i];
+            let mut r = 1;
+            while b > 0 {
+                if b & 1 == 1 {
+                    r = r * a % mod_ as u64;
+                }
+                a = a * a % mod_ as u64;
+                b >>= 1;
+            }
+            if r == 1 {
+                flg = false;
                 break;
             }
             i += 1;
         }
-        if ok {
-            return g as i32;
+        if flg {
+            break;
         }
-        g += 1;
+        pr += 1;
     }
+    pr
 }
 
 pub struct NTT<const MOD: u32> {
@@ -266,7 +232,7 @@ impl<const MOD: u32> NTT<MOD> {
     pub fn new() -> Self {
         let level = (MOD - 1).trailing_zeros() as usize;
         let mut ret = Self {
-            pr: primitive_root_const(MOD as i32) as u32,
+            pr: get_pr(MOD),
             level,
             dw: vec![MontgomeryModInt::zero(); level],
             dy: vec![MontgomeryModInt::zero(); level],
@@ -297,6 +263,7 @@ impl<const MOD: u32> NTT<MOD> {
     }
 
     pub fn ntt(a: &mut Vec<u32>, n: usize) {
+
         todo!();
     }
 
