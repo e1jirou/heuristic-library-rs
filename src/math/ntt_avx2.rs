@@ -256,7 +256,7 @@ impl<const MOD: u32> NTT<MOD> {
         let mut y = vec![MontgomeryModInt::zero(); self.level];
         w[self.level - 1] = MontgomeryModInt::from_i64(self.pr as i64).pow(((MOD - 1) / (1 << self.level)) as u64);
         y[self.level - 1] = w[self.level - 1].inv();
-        for i in (1..(self.level - 2)).rev() {
+        for i in (1..(self.level - 1)).rev() {
             w[i] = w[i + 1] * w[i + 1];
             y[i] = y[i + 1] * y[i + 1];
         }
@@ -268,7 +268,7 @@ impl<const MOD: u32> NTT<MOD> {
         self.dy[2] = y[2];
         for i in 3..self.level {
             self.dw[i] = self.dw[i - 1] * y[i - 2] * w[i];
-            self.dy[i] = self.dy[i - 1] * w[i - 2] * w[i];
+            self.dy[i] = self.dy[i - 1] * w[i - 2] * y[i];
         }
     }
 
@@ -322,10 +322,10 @@ impl<const MOD: u32> NTT<MOD> {
                     a[j1] = t0p2 - t1p3;
                     a[j2] = t0m2 + t1m3;
                     a[j3] = t0m2 - t1m3;
-                    j0 += 8;
-                    j1 += 8;
-                    j2 += 8;
-                    j3 += 8;
+                    j0 += 1;
+                    j1 += 1;
+                    j2 += 1;
+                    j3 += 1;
                 }
                 jh += 4;
                 xx *= self.dw[jh.trailing_zeros() as usize];
@@ -376,10 +376,10 @@ impl<const MOD: u32> NTT<MOD> {
                     a[j1] = (t0p1 - t2p3) * ww;
                     a[j2] = t0m1 + t2m3;
                     a[j3] = (t0m1 - t2m3) * ww;
-                    j0 += 8;
-                    j1 += 8;
-                    j2 += 8;
-                    j3 += 8;
+                    j0 += 1;
+                    j1 += 1;
+                    j2 += 1;
+                    j3 += 1;
                 }
                 jh += 4;
                 xx *= self.dy[jh.trailing_zeros() as usize];
