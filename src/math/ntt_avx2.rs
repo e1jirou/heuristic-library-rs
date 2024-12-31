@@ -14,6 +14,16 @@ pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
 }
 
 #[cfg(target_arch = "x86_64")]
+unsafe fn load128<T>(a: &Vec<T>, i: usize) -> __m128i {
+    _mm_loadu_si128(a[i..].as_ptr() as *const __m128i)
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn store128<T>(a: &mut Vec<T>, i: usize, x: __m128i) {
+    _mm_storeu_si128(a[i..].as_mut_ptr() as *mut __m128i, x);
+}
+
+#[cfg(target_arch = "x86_64")]
 unsafe fn load256<T>(a: &Vec<T>, i: usize) -> __m256i {
     _mm256_loadu_si256(a[i..].as_ptr() as *const __m256i)
 }
@@ -378,11 +388,38 @@ impl<const MOD: u32> NTT<MOD> {
         // 2-base
         if (k & 1) == 1 {
             let v = 1 << (k - 1);
-            for j in 0..v {
-                let aj = a[j];
-                let ajv = a[j + v];
-                a[j] = aj + ajv;
-                a[j + v] = aj - ajv;
+            if cfg!(target_arch = "x86_64") {
+                #[cfg(target_arch = "x86_64")]
+                if v < 8 {
+                    for j in 0..v {
+                        let aj = a[j];
+                        let ajv = a[j + v];
+                        a[j] = aj + ajv;
+                        a[j + v] = aj - ajv;
+                    }
+                } else {
+                    unsafe {
+                        let m0 = _mm256_setzero_si256();
+                        let m2 = _mm256_set1_epi32((MOD + MOD) as i32);
+                        let mut j0 = 0;
+                        let mut j1 = v;
+                        while j0 < v {
+                            let t0 = load256(&a, j0);
+                            let t1 = load256(&a, j1);
+                            store256(a, j0, montgomery_add_256(t0, t1, m2, m0));
+                            store256(a, j1, montgomery_sub_256(t0, t1, m2, m0));
+                            j0 += 8;
+                            j1 += 8;
+                        }
+                    }
+                }
+            } else {
+                for j in 0..v {
+                    let aj = a[j];
+                    let ajv = a[j + v];
+                    a[j] = aj + ajv;
+                    a[j + v] = aj - ajv;
+                }
             }
         }
         // 4-base
@@ -483,12 +520,40 @@ impl<const MOD: u32> NTT<MOD> {
         // 2-base
         if (k & 1) == 1 {
             let v = 1 << (k - 1);
-            for j in 0..v {
-                let aj = a[j];
-                let ajv = a[j + v];
-                a[j] = aj + ajv;
-                a[j + v] = aj - ajv;
+            if cfg!(target_arch = "x86_64") {
+                #[cfg(target_arch = "x86_64")]
+                if v < 8 {
+                    for j in 0..v {
+                        let aj = a[j];
+                        let ajv = a[j + v];
+                        a[j] = aj + ajv;
+                        a[j + v] = aj - ajv;
+                    }
+                } else {
+                    unsafe {
+                        let m0 = _mm256_setzero_si256();
+                        let m2 = _mm256_set1_epi32((MOD + MOD) as i32);
+                        let mut j0 = 0;
+                        let mut j1 = v;
+                        while j0 < v {
+                            let t0 = load256(&a, j0);
+                            let t1 = load256(&a, j1);
+                            store256(a, j0, montgomery_add_256(t0, t1, m2, m0));
+                            store256(a, j1, montgomery_sub_256(t0, t1, m2, m0));
+                            j0 += 8;
+                            j1 += 8;
+                        }
+                    }
+                }
+            } else {
+                for j in 0..v {
+                    let aj = a[j];
+                    let ajv = a[j + v];
+                    a[j] = aj + ajv;
+                    a[j + v] = aj - ajv;
+                }
             }
+            
         }
     }
 
@@ -538,9 +603,23 @@ impl<const MOD: u32> NTT<MOD> {
         self.intt(a, n);
 
         let invn = MontgomeryModInt::from_i64(n as i64).inv();
-        a.truncate(l);
-        for i in 0..l {
-            a[i] *= invn;
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                let m1 = _mm256_set1_epi32(MOD as i32);
+                let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
+                let invn = _mm256_set1_epi32(invn.v as i32);
+                for i in (0..n).step_by(8) {
+                    let ai = load256(&a, i);
+                    store256(a, i, montgomery_mul_256(ai, invn, r, m1));
+                }
+            }
+            a.truncate(l);
+        } else {
+            a.truncate(l);
+            for i in 0..l {
+                a[i] *= invn;
+            }
         }
     }
 }
