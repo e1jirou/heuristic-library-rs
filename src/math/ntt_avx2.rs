@@ -13,6 +13,16 @@ pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
+unsafe fn load256<T>(a: &Vec<T>, i: usize) -> __m256i {
+    _mm256_loadu_si256(a[i..].as_ptr() as *const __m256i)
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn store256<T>(a: &mut Vec<T>, i: usize, x: __m256i) {
+    _mm256_storeu_si256(a[i..].as_mut_ptr() as *mut __m256i, x);
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct MontgomeryModInt<const MOD: u32> {
     pub v: u32,
@@ -194,86 +204,70 @@ impl<const MOD: u32> std::fmt::Display for MontgomeryModInt<MOD> {
     }
 }
 
-#[cfg(target_feature = "sse2")]
-fn my128_mulhi_epu32(a: __m128i, b: __m128i) -> __m128i {
-    unsafe {
-        let a13 = _mm_shuffle_epi32(a, 0xF5);
-        let b13 = _mm_shuffle_epi32(b, 0xF5);
-        let prod02 = _mm_mul_epu32(a, b);
-        let prod13 = _mm_mul_epu32(a13, b13);
-        let prod = _mm_unpackhi_epi64(
-            _mm_unpacklo_epi32(prod02, prod13),
-            _mm_unpackhi_epi32(prod02, prod13),
-        );
-        prod
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn my128_mulhi_epu32(a: __m128i, b: __m128i) -> __m128i {
+    let a13 = _mm_shuffle_epi32(a, 0xF5);
+    let b13 = _mm_shuffle_epi32(b, 0xF5);
+    let prod02 = _mm_mul_epu32(a, b);
+    let prod13 = _mm_mul_epu32(a13, b13);
+    let prod = _mm_unpackhi_epi64(
+        _mm_unpacklo_epi32(prod02, prod13),
+        _mm_unpackhi_epi32(prod02, prod13),
+    );
+    prod
 }
 
-#[cfg(target_feature = "sse2")]
-fn montgomery_mul_128(a: __m128i, b: __m128i, r: __m128i, m1: __m128i) -> __m128i {
-    unsafe {
-        _mm_sub_epi32(
-            _mm_add_epi32(my128_mulhi_epu32(a, b), m1),
-            my128_mulhi_epu32(_mm_mullo_epi32(_mm_mullo_epi32(a, b), r), m1),
-        )
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_mul_128(a: __m128i, b: __m128i, r: __m128i, m1: __m128i) -> __m128i {
+    _mm_sub_epi32(
+        _mm_add_epi32(my128_mulhi_epu32(a, b), m1),
+        my128_mulhi_epu32(_mm_mullo_epi32(_mm_mullo_epi32(a, b), r), m1),
+    )
 }
 
-#[cfg(target_feature = "sse2")]
-fn montgomery_add_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
-    unsafe {
-        let ret = _mm_sub_epi32(_mm_add_epi32(a, b), m2);
-        _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_add_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
+    let ret = _mm_sub_epi32(_mm_add_epi32(a, b), m2);
+    _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
 }
 
-#[cfg(target_feature = "sse2")]
-fn montgomery_sub_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
-    unsafe {
-        let ret = _mm_sub_epi32(a, b);
-        _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_sub_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
+    let ret = _mm_sub_epi32(a, b);
+    _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
 }
 
-#[cfg(target_feature = "avx2")]
-fn my256_mulhi_epu32(a: __m256i, b: __m256i) -> __m256i {
-    unsafe {
-        let a13 = _mm256_shuffle_epi32(a, 0xF5);
-        let b13 = _mm256_shuffle_epi32(b, 0xF5);
-        let prod02 = _mm256_mul_epu32(a, b);
-        let prod13 = _mm256_mul_epu32(a13, b13);
-        let prod = _mm256_unpackhi_epi64(
-            _mm256_unpacklo_epi32(prod02, prod13),
-            _mm256_unpackhi_epi32(prod02, prod13),
-        );
-        prod
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn my256_mulhi_epu32(a: __m256i, b: __m256i) -> __m256i {
+    let a13 = _mm256_shuffle_epi32(a, 0xF5);
+    let b13 = _mm256_shuffle_epi32(b, 0xF5);
+    let prod02 = _mm256_mul_epu32(a, b);
+    let prod13 = _mm256_mul_epu32(a13, b13);
+    let prod = _mm256_unpackhi_epi64(
+        _mm256_unpacklo_epi32(prod02, prod13),
+        _mm256_unpackhi_epi32(prod02, prod13),
+    );
+    prod
 }
 
-#[cfg(target_feature = "avx2")]
-fn montgomery_mul_256(a: __m256i, b: __m256i, r: __m256i, m1: __m256i) -> __m256i {
-    unsafe {
-        _mm256_sub_epi32(
-            _mm256_add_epi32(my256_mulhi_epu32(a, b), m1),
-            my256_mulhi_epu32(_mm256_mullo_epi32(_mm256_mullo_epi32(a, b), r), m1),
-        )
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_mul_256(a: __m256i, b: __m256i, r: __m256i, m1: __m256i) -> __m256i {
+    _mm256_sub_epi32(
+        _mm256_add_epi32(my256_mulhi_epu32(a, b), m1),
+        my256_mulhi_epu32(_mm256_mullo_epi32(_mm256_mullo_epi32(a, b), r), m1),
+    )
 }
 
-#[cfg(target_feature = "avx2")]
-fn montgomery_add_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
-    unsafe {
-        let ret = _mm256_sub_epi32(_mm256_add_epi32(a, b), m2);
-        _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_add_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
+    let ret = _mm256_sub_epi32(_mm256_add_epi32(a, b), m2);
+    _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
 }
 
-#[cfg(target_feature = "avx2")]
-fn montgomery_sub_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
-    unsafe {
-        let ret = _mm256_sub_epi32(a, b);
-        _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
-    }
+#[cfg(target_arch = "x86_64")]
+unsafe fn montgomery_sub_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
+    let ret = _mm256_sub_epi32(a, b);
+    _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
 }
 
 const fn get_pr(mod_: u32) -> u32 {
@@ -498,7 +492,7 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
-    // write result to a
+    // a = a * b
     pub fn multiply(&self, a: &mut Vec<MontgomeryModInt<MOD>>, b: &mut Vec<MontgomeryModInt<MOD>>) {
         if a.is_empty() || b.is_empty() {
             a.clear();
@@ -516,14 +510,33 @@ impl<const MOD: u32> NTT<MOD> {
             return;
         }
         let n = l.next_power_of_two();
+
+        // ntt
         a.resize(n, MontgomeryModInt::zero());
         self.ntt(a, n);
         b.resize(n, MontgomeryModInt::zero());
         self.ntt(b, n);
-        for i in 0..n {
-            a[i] *= b[i];
+
+        // inner product
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                let m1 = _mm256_set1_epi32(MOD as i32);
+                let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
+                for i in (0..n).step_by(8) {
+                    let ai = load256(&a, i);
+                    let bi = load256(&b, i);
+                    store256(a, i, montgomery_mul_256(ai, bi, r, m1));
+                }
+            }
+        } else {
+            for i in 0..n {
+                a[i] *= b[i];
+            }
         }
+        // intt
         self.intt(a, n);
+
         let invn = MontgomeryModInt::from_i64(n as i64).inv();
         a.truncate(l);
         for i in 0..l {
