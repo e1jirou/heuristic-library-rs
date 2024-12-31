@@ -1,3 +1,6 @@
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 // size: bytes
 // align: bytes
 // return empty vector
@@ -16,7 +19,7 @@ pub struct MontgomeryModInt<const MOD: u32> {
 }
 
 impl<const MOD: u32> MontgomeryModInt<MOD> {
-    const fn r() -> u32 {
+    pub const fn r() -> u32 {
         let mut ret = MOD;
         let mut i = 0;
         while i < 4 {
@@ -26,17 +29,18 @@ impl<const MOD: u32> MontgomeryModInt<MOD> {
         ret
     }
 
-    const fn n2() -> u32 {
+    pub const fn n2() -> u32 {
         (-(MOD as i64) as u64 % MOD as u64) as u32
     }
 
     pub const fn reduce(b: u64) -> u32 {
-        ((b + ((b as u32).wrapping_mul(-(Self::r() as i32) as u32)) as u64 * MOD as u64) >> 32) as u32
+        ((b + ((b as u32).wrapping_mul(-(Self::r() as i32) as u32)) as u64 * MOD as u64) >> 32)
+            as u32
     }
 
     pub const fn from_i64(v: i64) -> Self {
         MontgomeryModInt {
-            v: Self::reduce((v % MOD as i64 + MOD as i64) as u64 * Self::n2() as u64)
+            v: Self::reduce((v % MOD as i64 + MOD as i64) as u64 * Self::n2() as u64),
         }
     }
 
@@ -50,7 +54,11 @@ impl<const MOD: u32> MontgomeryModInt<MOD> {
 
     pub const fn val(&self) -> u32 {
         let ret = Self::reduce(self.v as u64);
-        if ret >= MOD {ret - MOD} else {ret}
+        if ret >= MOD {
+            ret - MOD
+        } else {
+            ret
+        }
     }
 
     pub fn pow(&self, mut n: u64) -> Self {
@@ -135,7 +143,7 @@ impl<const MOD: u32> std::ops::Add for MontgomeryModInt<MOD> {
 
 impl<const MOD: u32> std::ops::Sub for MontgomeryModInt<MOD> {
     type Output = Self;
-    
+
     fn sub(mut self, rhs: Self) -> Self::Output {
         self -= rhs;
         self
@@ -168,7 +176,13 @@ impl<const MOD: u32> Default for MontgomeryModInt<MOD> {
 
 impl<const MOD: u32> PartialEq for MontgomeryModInt<MOD> {
     fn eq(&self, other: &Self) -> bool {
-        (if self.v >= MOD {self.v - MOD} else {self.v}) == (if other.v >= MOD {other.v - MOD} else {other.v})
+        let l = if self.v >= MOD { self.v - MOD } else { self.v };
+        let r = if other.v >= MOD {
+            other.v - MOD
+        } else {
+            other.v
+        };
+        l == r
     }
 }
 
@@ -177,6 +191,88 @@ impl<const MOD: u32> Eq for MontgomeryModInt<MOD> {}
 impl<const MOD: u32> std::fmt::Display for MontgomeryModInt<MOD> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.val())
+    }
+}
+
+#[cfg(target_feature = "sse2")]
+fn my128_mulhi_epu32(a: __m128i, b: __m128i) -> __m128i {
+    unsafe {
+        let a13 = _mm_shuffle_epi32(a, 0xF5);
+        let b13 = _mm_shuffle_epi32(b, 0xF5);
+        let prod02 = _mm_mul_epu32(a, b);
+        let prod13 = _mm_mul_epu32(a13, b13);
+        let prod = _mm_unpackhi_epi64(
+            _mm_unpacklo_epi32(prod02, prod13),
+            _mm_unpackhi_epi32(prod02, prod13),
+        );
+        prod
+    }
+}
+
+#[cfg(target_feature = "sse2")]
+fn montgomery_mul_128(a: __m128i, b: __m128i, r: __m128i, m1: __m128i) -> __m128i {
+    unsafe {
+        _mm_sub_epi32(
+            _mm_add_epi32(my128_mulhi_epu32(a, b), m1),
+            my128_mulhi_epu32(_mm_mullo_epi32(_mm_mullo_epi32(a, b), r), m1),
+        )
+    }
+}
+
+#[cfg(target_feature = "sse2")]
+fn montgomery_add_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
+    unsafe {
+        let ret = _mm_sub_epi32(_mm_add_epi32(a, b), m2);
+        _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
+    }
+}
+
+#[cfg(target_feature = "sse2")]
+fn montgomery_sub_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
+    unsafe {
+        let ret = _mm_sub_epi32(a, b);
+        _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
+    }
+}
+
+#[cfg(target_feature = "avx2")]
+fn my256_mulhi_epu32(a: __m256i, b: __m256i) -> __m256i {
+    unsafe {
+        let a13 = _mm256_shuffle_epi32(a, 0xF5);
+        let b13 = _mm256_shuffle_epi32(b, 0xF5);
+        let prod02 = _mm256_mul_epu32(a, b);
+        let prod13 = _mm256_mul_epu32(a13, b13);
+        let prod = _mm256_unpackhi_epi64(
+            _mm256_unpacklo_epi32(prod02, prod13),
+            _mm256_unpackhi_epi32(prod02, prod13),
+        );
+        prod
+    }
+}
+
+#[cfg(target_feature = "avx2")]
+fn montgomery_mul_256(a: __m256i, b: __m256i, r: __m256i, m1: __m256i) -> __m256i {
+    unsafe {
+        _mm256_sub_epi32(
+            _mm256_add_epi32(my256_mulhi_epu32(a, b), m1),
+            my256_mulhi_epu32(_mm256_mullo_epi32(_mm256_mullo_epi32(a, b), r), m1),
+        )
+    }
+}
+
+#[cfg(target_feature = "avx2")]
+fn montgomery_add_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
+    unsafe {
+        let ret = _mm256_sub_epi32(_mm256_add_epi32(a, b), m2);
+        _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
+    }
+}
+
+#[cfg(target_feature = "avx2")]
+fn montgomery_sub_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
+    unsafe {
+        let ret = _mm256_sub_epi32(a, b);
+        _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
     }
 }
 
@@ -254,7 +350,8 @@ impl<const MOD: u32> NTT<MOD> {
     fn setwy(&mut self) {
         let mut w = vec![MontgomeryModInt::zero(); self.level];
         let mut y = vec![MontgomeryModInt::zero(); self.level];
-        w[self.level - 1] = MontgomeryModInt::from_i64(self.pr as i64).pow(((MOD - 1) / (1 << self.level)) as u64);
+        w[self.level - 1] =
+            MontgomeryModInt::from_i64(self.pr as i64).pow(((MOD - 1) / (1 << self.level)) as u64);
         y[self.level - 1] = w[self.level - 1].inv();
         for i in (1..(self.level - 1)).rev() {
             w[i] = w[i + 1] * w[i + 1];
