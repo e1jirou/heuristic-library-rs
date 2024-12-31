@@ -2,7 +2,7 @@
 // align: bytes
 // return empty vector
 pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
-    let capacity = size / size_of::<T>();
+    let capacity = size / std::mem::size_of::<T>();
     unsafe {
         let layout = std::alloc::Layout::from_size_align_unchecked(size, align);
         let ptr = std::alloc::alloc(layout);
@@ -278,13 +278,14 @@ impl<const MOD: u32> NTT<MOD> {
         }
         let k = n.trailing_zeros();
         if k == 1 {
+            let a0 = a[0];
             let a1 = a[1];
-            a[1] = a[0] - a1;
-            a[0] = a[0] + a1;
+            a[0] = a0 + a1;
+            a[1] = a0 - a1;
             return;
         }
         // 2-base
-        if k & 1 == 1 {
+        if (k & 1) == 1 {
             let v = 1 << (k - 1);
             for j in 0..v {
                 let aj = a[j];
@@ -341,9 +342,10 @@ impl<const MOD: u32> NTT<MOD> {
         }
         let k = n.trailing_zeros();
         if k == 1 {
+            let a0 = a[0];
             let a1 = a[1];
-            a[1] = a[0] - a1;
-            a[0] = a[0] + a1;
+            a[0] = a0 + a1;
+            a[1] = a0 - a1;
             return;
         }
         // 4-base
@@ -373,8 +375,8 @@ impl<const MOD: u32> NTT<MOD> {
                     let t0m1 = (t0 - t1) * xx;
                     let t2m3 = (t2 - t3) * yy;
                     a[j0] = t0p1 + t2p3;
-                    a[j1] = (t0p1 - t2p3) * ww;
-                    a[j2] = t0m1 + t2m3;
+                    a[j1] = t0m1 + t2m3;
+                    a[j2] = (t0p1 - t2p3) * ww;
                     a[j3] = (t0m1 - t2m3) * ww;
                     j0 += 1;
                     j1 += 1;
@@ -388,7 +390,7 @@ impl<const MOD: u32> NTT<MOD> {
             v <<= 2;
         }
         // 2-base
-        if k & 1 == 1 {
+        if (k & 1) == 1 {
             let v = 1 << (k - 1);
             for j in 0..v {
                 let aj = a[j];
