@@ -14,23 +14,23 @@ pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
 }
 
 #[cfg(target_arch = "x86_64")]
-unsafe fn load128<T>(a: &Vec<T>, i: usize) -> __m128i {
-    _mm_loadu_si128(a[i..].as_ptr() as *const __m128i)
+unsafe fn load128i<T>(a: &[T], i: usize) -> __m128i {
+    _mm_loadu_si128(a.as_ptr().add(i) as *const __m128i)
 }
 
 #[cfg(target_arch = "x86_64")]
-unsafe fn store128<T>(a: &mut Vec<T>, i: usize, x: __m128i) {
-    _mm_storeu_si128(a[i..].as_mut_ptr() as *mut __m128i, x);
+unsafe fn store128i<T>(a: &mut [T], i: usize, x: __m128i) {
+    _mm_storeu_si128(a.as_mut_ptr().add(i) as *mut __m128i, x);
 }
 
 #[cfg(target_arch = "x86_64")]
-unsafe fn load256<T>(a: &Vec<T>, i: usize) -> __m256i {
-    _mm256_loadu_si256(a[i..].as_ptr() as *const __m256i)
+unsafe fn load256i<T>(a: &[T], i: usize) -> __m256i {
+    _mm256_loadu_si256(a.as_ptr().add(i) as *const __m256i)
 }
 
 #[cfg(target_arch = "x86_64")]
-unsafe fn store256<T>(a: &mut Vec<T>, i: usize, x: __m256i) {
-    _mm256_storeu_si256(a[i..].as_mut_ptr() as *mut __m256i, x);
+unsafe fn store256i<T>(a: &mut [T], i: usize, x: __m256i) {
+    _mm256_storeu_si256(a.as_mut_ptr().add(i) as *mut __m256i, x);
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -373,10 +373,174 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
+    fn butterfly(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+        let imag = self.dw[1];
+        while jh < jhe {
+            let ww = xx * xx;
+            let wx = ww * xx;
+            let mut j0 = jh * v;
+            let mut j1 = j0 + v;
+            let mut j2 = j1 + v;
+            let mut j3 = j2 + v;
+            let je = j1;
+            while j0 < je {
+                let t0 = a[j0];
+                let t1 = a[j1] * xx;
+                let t2 = a[j2] * ww;
+                let t3 = a[j3] * wx;
+                let t0p2 = t0 + t2;
+                let t1p3 = t1 + t3;
+                let t0m2 = t0 - t2;
+                let t1m3 = (t1 - t3) * imag;
+                a[j0] = t0p2 + t1p3;
+                a[j1] = t0p2 - t1p3;
+                a[j2] = t0m2 + t1m3;
+                a[j3] = t0m2 - t1m3;
+                j0 += 1;
+                j1 += 1;
+                j2 += 1;
+                j3 += 1;
+            }
+            jh += 4;
+            xx *= self.dw[jh.trailing_zeros() as usize];
+        }
+        xx
+    }
+
+    fn butterfly_v1(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+        let imag = self.dw[1];
+        while jh < jhe {
+            let ww = xx * xx;
+            let wx = ww * xx;
+            let t0 = a[jh];
+            let t1 = a[jh + 1] * xx;
+            let t2 = a[jh + 2] * ww;
+            let t3 = a[jh + 3] * wx;
+            let t0p2 = t0 + t2;
+            let t1p3 = t1 + t3;
+            let t0m2 = t0 - t2;
+            let t1m3 = (t1 - t3) * imag;
+            a[jh] = t0p2 + t1p3;
+            a[jh + 1] = t0p2 - t1p3;
+            a[jh + 2] = t0m2 + t1m3;
+            a[jh + 3] = t0m2 - t1m3;
+            jh += 4;
+            xx *= self.dw[jh.trailing_zeros() as usize];
+        }
+        xx
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    unsafe fn butterfly_v4(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+        let m0 = _mm_setzero_si128();
+        let m1 = _mm_set1_epi32(MOD as i32);
+        let m2 = _mm_set1_epi32((MOD + MOD) as i32);
+        let r = _mm_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
+        let imag = _mm_set1_epi32(self.dw[1].v as i32);
+        while jh < jhe {
+            let ww = xx * xx;
+            let wx = ww * xx;
+            let xx128 = _mm_set1_epi32(xx.v as i32);
+            let ww128 = _mm_set1_epi32(ww.v as i32);
+            let wx128 = _mm_set1_epi32(wx.v as i32);
+            let j = 4 * jh;
+            let t0 = load128i(&a, j);
+            let t1 = load128i(&a, j + 4);
+            let t2 = load128i(&a, j + 8);
+            let t3 = load128i(&a, j + 12);
+            let mt1 = montgomery_mul_128(t1, xx128, r, m1);
+            let mt2 = montgomery_mul_128(t2, ww128, r, m1);
+            let mt3 = montgomery_mul_128(t3, wx128, r, m1);
+            let t0p2 = montgomery_add_128(t0, mt2, m2, m0);
+            let t1p3 = montgomery_add_128(mt1, mt3, m2, m0);
+            let t0m2 = montgomery_sub_128(t0, mt2, m2, m0);
+            let t1m3 = montgomery_mul_128(montgomery_sub_128(mt1, mt3, m2, m0), imag, r, m1);
+            store128i(a, j, montgomery_add_128(t0p2, t1p3, m2, m0));
+            store128i(a, j + 4, montgomery_sub_128(t0p2, t1p3, m2, m0));
+            store128i(a, j + 8, montgomery_add_128(t0m2, t1m3, m2, m0));
+            store128i(a, j + 12, montgomery_sub_128(t0m2, t1m3, m2, m0));
+            jh += 4;
+            xx *= self.dw[jh.trailing_zeros() as usize];
+        }
+        xx
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    unsafe fn butterfly_v_big(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+        let m0 = _mm256_setzero_si256();
+        let m1 = _mm256_set1_epi32(MOD as i32);
+        let m2 = _mm256_set1_epi32((MOD + MOD) as i32);
+        let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
+        let imag = _mm256_set1_epi32(self.dw[1].v as i32);
+        while jh < jhe {
+            if jh == 0 {
+                let mut j0 = 0;
+                let mut j1 = v;
+                let mut j2 = j1 + v;
+                let mut j3 = j2 + v;
+                let je = v;
+                while j0 < je {
+                    let t0 = load256i(&a, j0);
+                    let t1 = load256i(&a, j1);
+                    let t2 = load256i(&a, j2);
+                    let t3 = load256i(&a, j3);
+                    let t0p2 = montgomery_add_256(t0, t2, m2, m0);
+                    let t1p3 = montgomery_add_256(t1, t3, m2, m0);
+                    let t0m2 = montgomery_sub_256(t0, t2, m2, m0);
+                    let t1m3 = montgomery_mul_256(montgomery_sub_256(t1, t3, m2, m0), imag, r, m1);
+                    store256i(a, j0, montgomery_add_256(t0p2, t1p3, m2, m0));
+                    store256i(a, j1, montgomery_sub_256(t0p2, t1p3, m2, m0));
+                    store256i(a, j2, montgomery_add_256(t0m2, t1m3, m2, m0));
+                    store256i(a, j3, montgomery_sub_256(t0m2, t1m3, m2, m0));
+                    j0 += 8;
+                    j1 += 8;
+                    j2 += 8;
+                    j3 += 8;
+                }
+            } else {
+                let ww = xx * xx;
+                let wx = ww * xx;
+                let xx256 = _mm256_set1_epi32(xx.v as i32);
+                let ww256 = _mm256_set1_epi32(ww.v as i32);
+                let wx256 = _mm256_set1_epi32(wx.v as i32);
+                let mut j0 = jh * v;
+                let mut j1 = j0 + v;
+                let mut j2 = j1 + v;
+                let mut j3 = j2 + v;
+                let je = j1;
+                while j0 < je {
+                    let t0 = load256i(&a, j0);
+                    let t1 = load256i(&a, j1);
+                    let t2 = load256i(&a, j2);
+                    let t3 = load256i(&a, j3);
+                    let mt1 = montgomery_mul_256(t1, xx256, r, m1);
+                    let mt2 = montgomery_mul_256(t2, ww256, r, m1);
+                    let mt3 = montgomery_mul_256(t3, wx256, r, m1);
+                    let t0p2 = montgomery_add_256(t0, mt2, m2, m0);
+                    let t1p3 = montgomery_add_256(mt1, mt3, m2, m0);
+                    let t0m2 = montgomery_sub_256(t0, mt2, m2, m0);
+                    let t1m3 = montgomery_mul_256(montgomery_sub_256(mt1, mt3, m2, m0), imag, r, m1);
+                    store256i(a, j0, montgomery_add_256(t0p2, t1p3, m2, m0));
+                    store256i(a, j1, montgomery_sub_256(t0p2, t1p3, m2, m0));
+                    store256i(a, j2, montgomery_add_256(t0m2, t1m3, m2, m0));
+                    store256i(a, j3, montgomery_sub_256(t0m2, t1m3, m2, m0));
+                    j0 += 8;
+                    j1 += 8;
+                    j2 += 8;
+                    j3 += 8;
+                }
+            }
+            jh += 4;
+            xx *= self.dw[jh.trailing_zeros() as usize];
+        }
+        xx
+    }
+
     pub fn ntt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
         if n <= 1 {
             return;
         }
+        debug_assert_eq!(n, n.next_power_of_two());
         let k = n.trailing_zeros();
         if k == 1 {
             let a0 = a[0];
@@ -404,10 +568,10 @@ impl<const MOD: u32> NTT<MOD> {
                         let mut j0 = 0;
                         let mut j1 = v;
                         while j0 < v {
-                            let t0 = load256(&a, j0);
-                            let t1 = load256(&a, j1);
-                            store256(a, j0, montgomery_add_256(t0, t1, m2, m0));
-                            store256(a, j1, montgomery_sub_256(t0, t1, m2, m0));
+                            let t0 = load256i(&a, j0);
+                            let t1 = load256i(&a, j1);
+                            store256i(a, j0, montgomery_add_256(t0, t1, m2, m0));
+                            store256i(a, j1, montgomery_sub_256(t0, t1, m2, m0));
                             j0 += 8;
                             j1 += 8;
                         }
@@ -426,38 +590,20 @@ impl<const MOD: u32> NTT<MOD> {
         let mut u = 1 << (2 + (k & 1));
         let mut v = 1 << (k - 2 - (k & 1));
         let one = MontgomeryModInt::one();
-        let imag = self.dw[1];
         while v > 0 {
-            let mut xx = one;
-            let mut jh = 0;
-            while jh < u {
-                let ww = xx * xx;
-                let wx = ww * xx;
-                let mut j0 = jh * v;
-                let mut j1 = j0 + v;
-                let mut j2 = j1 + v;
-                let mut j3 = j2 + v;
-                let je = j1;
-                while j0 < je {
-                    let t0 = a[j0];
-                    let t1 = a[j1] * xx;
-                    let t2 = a[j2] * ww;
-                    let t3 = a[j3] * wx;
-                    let t0p2 = t0 + t2;
-                    let t1p3 = t1 + t3;
-                    let t0m2 = t0 - t2;
-                    let t1m3 = (t1 - t3) * imag;
-                    a[j0] = t0p2 + t1p3;
-                    a[j1] = t0p2 - t1p3;
-                    a[j2] = t0m2 + t1m3;
-                    a[j3] = t0m2 - t1m3;
-                    j0 += 1;
-                    j1 += 1;
-                    j2 += 1;
-                    j3 += 1;
+            if cfg!(target_arch = "x86_64") {
+                #[cfg(target_arch = "x86_64")]
+                unsafe {
+                    if v == 1 {
+                        self.butterfly_v1(a, 0, u, one);
+                    } else if v == 4 {
+                        self.butterfly_v4(a, 0, u, one);
+                    } else {
+                        self.butterfly_v_big(a, 0, u, v, one);
+                    }
                 }
-                jh += 4;
-                xx *= self.dw[jh.trailing_zeros() as usize];
+            } else {
+                self.butterfly(a, 0, u, v, one);
             }
             u <<= 2;
             v >>= 2;
@@ -468,6 +614,7 @@ impl<const MOD: u32> NTT<MOD> {
         if n <= 1 {
             return;
         }
+        debug_assert_eq!(n, n.next_power_of_two());
         let k = n.trailing_zeros();
         if k == 1 {
             let a0 = a[0];
@@ -536,10 +683,10 @@ impl<const MOD: u32> NTT<MOD> {
                         let mut j0 = 0;
                         let mut j1 = v;
                         while j0 < v {
-                            let t0 = load256(&a, j0);
-                            let t1 = load256(&a, j1);
-                            store256(a, j0, montgomery_add_256(t0, t1, m2, m0));
-                            store256(a, j1, montgomery_sub_256(t0, t1, m2, m0));
+                            let t0 = load256i(&a, j0);
+                            let t1 = load256i(&a, j1);
+                            store256i(a, j0, montgomery_add_256(t0, t1, m2, m0));
+                            store256i(a, j1, montgomery_sub_256(t0, t1, m2, m0));
                             j0 += 8;
                             j1 += 8;
                         }
@@ -589,9 +736,9 @@ impl<const MOD: u32> NTT<MOD> {
                 let m1 = _mm256_set1_epi32(MOD as i32);
                 let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
                 for i in (0..n).step_by(8) {
-                    let ai = load256(&a, i);
-                    let bi = load256(&b, i);
-                    store256(a, i, montgomery_mul_256(ai, bi, r, m1));
+                    let ai = load256i(&a, i);
+                    let bi = load256i(&b, i);
+                    store256i(a, i, montgomery_mul_256(ai, bi, r, m1));
                 }
             }
         } else {
@@ -610,8 +757,8 @@ impl<const MOD: u32> NTT<MOD> {
                 let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
                 let invn = _mm256_set1_epi32(invn.v as i32);
                 for i in (0..n).step_by(8) {
-                    let ai = load256(&a, i);
-                    store256(a, i, montgomery_mul_256(ai, invn, r, m1));
+                    let ai = load256i(&a, i);
+                    store256i(a, i, montgomery_mul_256(ai, invn, r, m1));
                 }
             }
             a.truncate(l);
