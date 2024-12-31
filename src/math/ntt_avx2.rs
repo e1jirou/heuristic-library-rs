@@ -14,21 +14,25 @@ pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn load128i<T>(a: &[T], i: usize) -> __m128i {
     _mm_loadu_si128(a.as_ptr().add(i) as *const __m128i)
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn store128i<T>(a: &mut [T], i: usize, x: __m128i) {
     _mm_storeu_si128(a.as_mut_ptr().add(i) as *mut __m128i, x);
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn load256i<T>(a: &[T], i: usize) -> __m256i {
     _mm256_loadu_si256(a.as_ptr().add(i) as *const __m256i)
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn store256i<T>(a: &mut [T], i: usize, x: __m256i) {
     _mm256_storeu_si256(a.as_mut_ptr().add(i) as *mut __m256i, x);
 }
@@ -215,6 +219,7 @@ impl<const MOD: u32> std::fmt::Display for MontgomeryModInt<MOD> {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn my128_mulhi_epu32(a: __m128i, b: __m128i) -> __m128i {
     let a13 = _mm_shuffle_epi32(a, 0xF5);
     let b13 = _mm_shuffle_epi32(b, 0xF5);
@@ -228,6 +233,7 @@ unsafe fn my128_mulhi_epu32(a: __m128i, b: __m128i) -> __m128i {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn montgomery_mul_128(a: __m128i, b: __m128i, r: __m128i, m1: __m128i) -> __m128i {
     _mm_sub_epi32(
         _mm_add_epi32(my128_mulhi_epu32(a, b), m1),
@@ -236,18 +242,21 @@ unsafe fn montgomery_mul_128(a: __m128i, b: __m128i, r: __m128i, m1: __m128i) ->
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn montgomery_add_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
     let ret = _mm_sub_epi32(_mm_add_epi32(a, b), m2);
     _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "sse2")]
 unsafe fn montgomery_sub_128(a: __m128i, b: __m128i, m2: __m128i, m0: __m128i) -> __m128i {
     let ret = _mm_sub_epi32(a, b);
     _mm_add_epi32(_mm_and_si128(_mm_cmpgt_epi32(m0, ret), m2), ret)
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn my256_mulhi_epu32(a: __m256i, b: __m256i) -> __m256i {
     let a13 = _mm256_shuffle_epi32(a, 0xF5);
     let b13 = _mm256_shuffle_epi32(b, 0xF5);
@@ -261,6 +270,7 @@ unsafe fn my256_mulhi_epu32(a: __m256i, b: __m256i) -> __m256i {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn montgomery_mul_256(a: __m256i, b: __m256i, r: __m256i, m1: __m256i) -> __m256i {
     _mm256_sub_epi32(
         _mm256_add_epi32(my256_mulhi_epu32(a, b), m1),
@@ -269,12 +279,14 @@ unsafe fn montgomery_mul_256(a: __m256i, b: __m256i, r: __m256i, m1: __m256i) ->
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn montgomery_add_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
     let ret = _mm256_sub_epi32(_mm256_add_epi32(a, b), m2);
     _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
 }
 
 #[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
 unsafe fn montgomery_sub_256(a: __m256i, b: __m256i, m2: __m256i, m0: __m256i) -> __m256i {
     let ret = _mm256_sub_epi32(a, b);
     _mm256_add_epi32(_mm256_and_si256(_mm256_cmpgt_epi32(m0, ret), m2), ret)
@@ -431,6 +443,7 @@ impl<const MOD: u32> NTT<MOD> {
     }
 
     #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "sse2")]
     unsafe fn butterfly_v4(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
         let m0 = _mm_setzero_si128();
         let m1 = _mm_set1_epi32(MOD as i32);
@@ -466,6 +479,7 @@ impl<const MOD: u32> NTT<MOD> {
     }
 
     #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
     unsafe fn butterfly_v_big(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
         let m0 = _mm256_setzero_si256();
         let m1 = _mm256_set1_epi32(MOD as i32);
