@@ -37,6 +37,7 @@ unsafe fn store256i<T>(a: &mut [T], i: usize, x: __m256i) {
     _mm256_storeu_si256(a.as_mut_ptr().add(i) as *mut __m256i, x);
 }
 
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
 pub struct MontgomeryModInt<const MOD: u32> {
     pub v: u32,
@@ -385,9 +386,30 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
+    fn vec_u32_to_mint(vec: Vec<u32>) -> Vec<MontgomeryModInt<MOD>> {
+        let len = vec.len();
+        let capacity = vec.capacity();
+        let ptr = vec.as_ptr();
+        std::mem::forget(vec);
+        unsafe { Vec::from_raw_parts(ptr as *mut MontgomeryModInt<MOD>, len, capacity) }
+    }
+
+    fn vec_mint_to_u32(vec: Vec<MontgomeryModInt<MOD>>) -> Vec<u32> {
+        let len = vec.len();
+        let capacity = vec.capacity();
+        let ptr = vec.as_ptr();
+        std::mem::forget(vec);
+        unsafe { Vec::from_raw_parts(ptr as *mut u32, len, capacity) }
+    }
+
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
-    unsafe fn inner_product(&self, a: &mut Vec<MontgomeryModInt<MOD>>, b: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+    unsafe fn inner_product(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        b: &mut Vec<MontgomeryModInt<MOD>>,
+        n: usize,
+    ) {
         let m1 = _mm256_set1_epi32(MOD as i32);
         let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
         for i in (0..n).step_by(8) {
@@ -396,24 +418,56 @@ impl<const MOD: u32> NTT<MOD> {
             store256i(a, i, montgomery_mul_256(ai, bi, r, m1));
             if (i & 15) == 0 {
                 const PREFETCH_OFFSET: usize = 1024;
-                _mm_prefetch(a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
-                _mm_prefetch(b.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
+                _mm_prefetch(
+                    a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8,
+                    _MM_HINT_T0,
+                );
+                _mm_prefetch(
+                    b.as_ptr().add(i + PREFETCH_OFFSET) as *const i8,
+                    _MM_HINT_T0,
+                );
             }
         }
     }
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
-    unsafe fn post_processing(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+    unsafe fn mul_mint(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize, x: u32) {
         let m1 = _mm256_set1_epi32(MOD as i32);
         let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
-        let invn = _mm256_set1_epi32(MontgomeryModInt::<MOD>::from_i64(n as i64).inv().v as i32);
+        let x256 = _mm256_set1_epi32(x as i32);
         for i in (0..n).step_by(8) {
             let ai = load256i(&a, i);
-            store256i(a, i, montgomery_mul_256(ai, invn, r, m1));
+            store256i(a, i, montgomery_mul_256(ai, x256, r, m1));
             if (i & 15) == 0 {
                 const PREFETCH_OFFSET: usize = 1024;
-                _mm_prefetch(a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
+                _mm_prefetch(
+                    a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8,
+                    _MM_HINT_T0,
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "avx2")]
+    unsafe fn mul_mint_then_reduce(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize, x: u32) {
+        let m0 = _mm256_setzero_si256();
+        let m1 = _mm256_set1_epi32(MOD as i32);
+        let r = _mm256_set1_epi32(MontgomeryModInt::<MOD>::r() as i32);
+        let x256 = _mm256_set1_epi32(x as i32);
+        for i in (0..n).step_by(8) {
+            let ai = load256i(&a, i);
+            let b = montgomery_mul_256(ai, x256, r, m1);
+            let c = my256_mulhi_epu32(_mm256_mullo_epi32(b, r), m1);
+            let d = _mm256_and_si256(_mm256_cmpgt_epi32(c, m0), m1);
+            store256i(a, i, _mm256_sub_epi32(d, c));
+            if (i & 15) == 0 {
+                const PREFETCH_OFFSET: usize = 1024;
+                _mm_prefetch(
+                    a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8,
+                    _MM_HINT_T0,
+                );
             }
         }
     }
@@ -454,7 +508,14 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
-    fn butterfly(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    fn butterfly(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        v: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let imag = self.dw[1];
         while jh < jhe {
             let ww = xx * xx;
@@ -489,7 +550,13 @@ impl<const MOD: u32> NTT<MOD> {
     }
 
     #[allow(unused)]
-    fn butterfly_v1(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    fn butterfly_v1(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let imag = self.dw[1];
         while jh < jhe {
             let ww = xx * xx;
@@ -514,7 +581,13 @@ impl<const MOD: u32> NTT<MOD> {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
-    unsafe fn butterfly_v4(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    unsafe fn butterfly_v4(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let m0 = _mm_setzero_si128();
         let m1 = _mm_set1_epi32(MOD as i32);
         let m2 = _mm_set1_epi32((MOD + MOD) as i32);
@@ -550,7 +623,14 @@ impl<const MOD: u32> NTT<MOD> {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
-    unsafe fn butterfly_v_big(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    unsafe fn butterfly_v_big(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        v: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let m0 = _mm256_setzero_si256();
         let m1 = _mm256_set1_epi32(MOD as i32);
         let m2 = _mm256_set1_epi32((MOD + MOD) as i32);
@@ -611,7 +691,8 @@ impl<const MOD: u32> NTT<MOD> {
                     let t0p2 = montgomery_add_256(t0, mt2, m2, m0);
                     let t1p3 = montgomery_add_256(mt1, mt3, m2, m0);
                     let t0m2 = montgomery_sub_256(t0, mt2, m2, m0);
-                    let t1m3 = montgomery_mul_256(montgomery_sub_256(mt1, mt3, m2, m0), imag, r, m1);
+                    let t1m3 =
+                        montgomery_mul_256(montgomery_sub_256(mt1, mt3, m2, m0), imag, r, m1);
                     store256i(a, j0, montgomery_add_256(t0p2, t1p3, m2, m0));
                     store256i(a, j1, montgomery_sub_256(t0p2, t1p3, m2, m0));
                     store256i(a, j2, montgomery_add_256(t0m2, t1m3, m2, m0));
@@ -636,7 +717,14 @@ impl<const MOD: u32> NTT<MOD> {
         xx
     }
 
-    fn butterfly_inv(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    fn butterfly_inv(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        v: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let imag = self.dy[1];
         while jh < jhe {
             let ww = xx * xx;
@@ -671,7 +759,13 @@ impl<const MOD: u32> NTT<MOD> {
     }
 
     #[allow(unused)]
-    fn butterfly_inv_v1(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    fn butterfly_inv_v1(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let imag = self.dy[1];
         while jh < jhe {
             let ww = xx * xx;
@@ -696,7 +790,13 @@ impl<const MOD: u32> NTT<MOD> {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
-    unsafe fn butterfly_inv_v4(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    unsafe fn butterfly_inv_v4(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let m0 = _mm_setzero_si128();
         let m1 = _mm_set1_epi32(MOD as i32);
         let m2 = _mm_set1_epi32((MOD + MOD) as i32);
@@ -719,8 +819,16 @@ impl<const MOD: u32> NTT<MOD> {
             let t2m3 = montgomery_mul_128(montgomery_sub_128(t2, t3, m2, m0), yy128, r, m1);
             store128i(a, j, montgomery_add_128(t0p1, t2p3, m2, m0));
             store128i(a, j + 4, montgomery_add_128(t0m1, t2m3, m2, m0));
-            store128i(a, j + 8, montgomery_mul_128(montgomery_sub_128(t0p1, t2p3, m2, m0), ww128, r, m1));
-            store128i(a, j + 12, montgomery_mul_128(montgomery_sub_128(t0m1, t2m3, m2, m0), ww128, r, m1));
+            store128i(
+                a,
+                j + 8,
+                montgomery_mul_128(montgomery_sub_128(t0p1, t2p3, m2, m0), ww128, r, m1),
+            );
+            store128i(
+                a,
+                j + 12,
+                montgomery_mul_128(montgomery_sub_128(t0m1, t2m3, m2, m0), ww128, r, m1),
+            );
             jh += 4;
             xx *= self.dy[jh.trailing_zeros() as usize];
         }
@@ -729,7 +837,14 @@ impl<const MOD: u32> NTT<MOD> {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
-    unsafe fn butterfly_inv_v_big(&self, a: &mut Vec<MontgomeryModInt<MOD>>, mut jh: usize, jhe: usize, v: usize, mut xx: MontgomeryModInt<MOD>) -> MontgomeryModInt<MOD> {
+    unsafe fn butterfly_inv_v_big(
+        &self,
+        a: &mut Vec<MontgomeryModInt<MOD>>,
+        mut jh: usize,
+        jhe: usize,
+        v: usize,
+        mut xx: MontgomeryModInt<MOD>,
+    ) -> MontgomeryModInt<MOD> {
         let m0 = _mm256_setzero_si256();
         let m1 = _mm256_set1_epi32(MOD as i32);
         let m2 = _mm256_set1_epi32((MOD + MOD) as i32);
@@ -751,7 +866,8 @@ impl<const MOD: u32> NTT<MOD> {
                     let t0p1 = montgomery_add_256(t0, t1, m2, m0);
                     let t2p3 = montgomery_add_256(t2, t3, m2, m0);
                     let t0m1 = montgomery_sub_256(t0, t1, m2, m0);
-                    let t2m3 = montgomery_mul_256(montgomery_sub_256(t2, t3, m2, m0), imag256, r, m1);
+                    let t2m3 =
+                        montgomery_mul_256(montgomery_sub_256(t2, t3, m2, m0), imag256, r, m1);
                     store256i(a, j0, montgomery_add_256(t0p1, t2p3, m2, m0));
                     store256i(a, j1, montgomery_add_256(t0m1, t2m3, m2, m0));
                     store256i(a, j2, montgomery_sub_256(t0p1, t2p3, m2, m0));
@@ -791,8 +907,16 @@ impl<const MOD: u32> NTT<MOD> {
                     let t2m3 = montgomery_mul_256(montgomery_sub_256(t2, t3, m2, m0), yy256, r, m1);
                     store256i(a, j0, montgomery_add_256(t0p1, t2p3, m2, m0));
                     store256i(a, j1, montgomery_add_256(t0m1, t2m3, m2, m0));
-                    store256i(a, j2, montgomery_mul_256(montgomery_sub_256(t0p1, t2p3, m2, m0), ww256, r, m1));
-                    store256i(a, j3, montgomery_mul_256(montgomery_sub_256(t0m1, t2m3, m2, m0), ww256, r, m1));
+                    store256i(
+                        a,
+                        j2,
+                        montgomery_mul_256(montgomery_sub_256(t0p1, t2p3, m2, m0), ww256, r, m1),
+                    );
+                    store256i(
+                        a,
+                        j3,
+                        montgomery_mul_256(montgomery_sub_256(t0m1, t2m3, m2, m0), ww256, r, m1),
+                    );
                     if (j0 & 15) == 0 {
                         const PREFETCH_OFFSET: usize = 512;
                         let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
@@ -813,7 +937,7 @@ impl<const MOD: u32> NTT<MOD> {
         xx
     }
 
-    pub fn ntt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+    fn ntt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
         if n <= 1 {
             return;
         }
@@ -866,7 +990,7 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
-    pub fn intt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
+    fn intt(&self, a: &mut Vec<MontgomeryModInt<MOD>>, n: usize) {
         if n <= 1 {
             return;
         }
@@ -920,40 +1044,42 @@ impl<const MOD: u32> NTT<MOD> {
         }
     }
 
-    // a = a * b
-    pub fn multiply(&self, a: &mut Vec<MontgomeryModInt<MOD>>, b: &mut Vec<MontgomeryModInt<MOD>>) {
+    pub fn multiply_mint(
+        &self,
+        mut a: Vec<MontgomeryModInt<MOD>>,
+        mut b: Vec<MontgomeryModInt<MOD>>,
+    ) -> Vec<MontgomeryModInt<MOD>> {
         if a.is_empty() || b.is_empty() {
             a.clear();
-            return;
+            return a;
         }
         let l = a.len() + b.len() - 1;
 
         const NAIVE_THRESHOLD: usize = 40;
         if a.len().min(b.len()) <= NAIVE_THRESHOLD {
             // naive
-            let mut s = vec![MontgomeryModInt::zero(); l];
+            let mut ret = vec![MontgomeryModInt::zero(); l];
             for i in 0..a.len() {
                 for j in 0..b.len() {
-                    s[i + j] += a[i] * b[j];
+                    ret[i + j] += a[i] * b[j];
                 }
             }
-            std::mem::swap(a, &mut s);
-            return;
+            return ret;
         }
 
         let n = l.next_power_of_two();
 
         // ntt
         a.resize(n, MontgomeryModInt::zero());
-        self.ntt(a, n);
+        self.ntt(&mut a, n);
         b.resize(n, MontgomeryModInt::zero());
-        self.ntt(b, n);
+        self.ntt(&mut b, n);
 
         // inner product
         if cfg!(target_arch = "x86_64") {
             #[cfg(target_arch = "x86_64")]
             unsafe {
-                self.inner_product(a, b, n);
+                self.inner_product(&mut a, &mut b, n);
             }
         } else {
             for i in 0..n {
@@ -962,21 +1088,110 @@ impl<const MOD: u32> NTT<MOD> {
         }
 
         // intt
-        self.intt(a, n);
+        self.intt(&mut a, n);
 
         // post processing
+        let invn = MontgomeryModInt::from_i64(n as i64).inv();
         if cfg!(target_arch = "x86_64") {
             #[cfg(target_arch = "x86_64")]
             unsafe {
-                self.post_processing(a, n);
+                self.mul_mint(&mut a, l, invn.v);
             }
             a.truncate(l);
         } else {
             a.truncate(l);
-            let invn = MontgomeryModInt::from_i64(n as i64).inv();
             for i in 0..l {
                 a[i] *= invn;
             }
         }
+        a
+    }
+
+    pub fn multiply_u32(&self, a: Vec<u32>, b: Vec<u32>) -> Vec<u32> {
+        if a.is_empty() || b.is_empty() {
+            return vec![];
+        }
+        let la = a.len();
+        let lb = b.len();
+        let l = la + lb - 1;
+
+        const NAIVE_THRESHOLD: usize = 40;
+        if a.len().min(b.len()) <= NAIVE_THRESHOLD {
+            // naive
+            let mut ret = vec![0; l];
+            for i in 0..a.len() {
+                for j in 0..b.len() {
+                    ret[i + j] += (a[i] as u64 * b[j] as u64 % MOD as u64) as u32;
+                    if ret[i + j] >= MOD {
+                        ret[i + j] -= MOD;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        let n = l.next_power_of_two();
+
+        let mut a = Self::vec_u32_to_mint(a);
+        let mut b = Self::vec_u32_to_mint(b);
+
+        // ntt
+        a.resize(n, MontgomeryModInt::zero());
+        let n2 = MontgomeryModInt::<MOD>::n2();
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                self.mul_mint(&mut a, la, n2);
+            }
+        } else {
+            for i in 0..la {
+                a[i] *= MontgomeryModInt::<MOD> { v: n2 };
+            }
+        }
+        self.ntt(&mut a, n);
+
+        b.resize(n, MontgomeryModInt::zero());
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                self.mul_mint(&mut b, lb, n2);
+            }
+        } else {
+            for i in 0..lb {
+                b[i] *= MontgomeryModInt::<MOD> { v: n2 };
+            }
+        }
+        self.ntt(&mut b, n);
+
+        // inner product
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                self.inner_product(&mut a, &mut b, n);
+            }
+        } else {
+            for i in 0..n {
+                a[i] *= b[i];
+            }
+        }
+
+        // intt
+        self.intt(&mut a, n);
+
+        // post processing
+        let invn = MontgomeryModInt::from_i64(n as i64).inv();
+        if cfg!(target_arch = "x86_64") {
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                self.mul_mint_then_reduce(&mut a, l, invn.v);
+            }
+            a.truncate(l);
+        } else {
+            a.truncate(l);
+            for i in 0..l {
+                a[i].v = (a[i] * invn).val();
+            }
+        }
+        Self::vec_mint_to_u32(a)
     }
 }
