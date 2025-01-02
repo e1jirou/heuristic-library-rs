@@ -928,7 +928,8 @@ impl<const MOD: u32> NTT<MOD> {
         }
         let l = a.len() + b.len() - 1;
 
-        if a.len().min(b.len()) <= 40 {
+        const NAIVE_THRESHOLD: usize = 40;
+        if a.len().min(b.len()) <= NAIVE_THRESHOLD {
             // naive
             let mut s = vec![MontgomeryModInt::zero(); l];
             for i in 0..a.len() {
