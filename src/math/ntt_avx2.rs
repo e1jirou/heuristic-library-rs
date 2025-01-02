@@ -394,6 +394,11 @@ impl<const MOD: u32> NTT<MOD> {
             let ai = load256i(&a, i);
             let bi = load256i(&b, i);
             store256i(a, i, montgomery_mul_256(ai, bi, r, m1));
+            if (i & 15) == 0 {
+                const PREFETCH_OFFSET: usize = 1024;
+                _mm_prefetch(a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
+                _mm_prefetch(b.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
+            }
         }
     }
 
@@ -406,6 +411,10 @@ impl<const MOD: u32> NTT<MOD> {
         for i in (0..n).step_by(8) {
             let ai = load256i(&a, i);
             store256i(a, i, montgomery_mul_256(ai, invn, r, m1));
+            if (i & 15) == 0 {
+                const PREFETCH_OFFSET: usize = 1024;
+                _mm_prefetch(a.as_ptr().add(i + PREFETCH_OFFSET) as *const i8, _MM_HINT_T0);
+            }
         }
     }
 
@@ -434,6 +443,12 @@ impl<const MOD: u32> NTT<MOD> {
             let t1 = load256i(&a, j1);
             store256i(a, j0, montgomery_add_256(t0, t1, m2, m0));
             store256i(a, j1, montgomery_sub_256(t0, t1, m2, m0));
+            if (j0 & 15) == 0 {
+                const PREFETCH_OFFSET: usize = 1024;
+                let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
+                _mm_prefetch(a_ptr.add(j0) as *const i8, _MM_HINT_T0);
+                _mm_prefetch(a_ptr.add(j1) as *const i8, _MM_HINT_T0);
+            }
             j0 += 8;
             j1 += 8;
         }
@@ -561,6 +576,14 @@ impl<const MOD: u32> NTT<MOD> {
                     store256i(a, j1, montgomery_sub_256(t0p2, t1p3, m2, m0));
                     store256i(a, j2, montgomery_add_256(t0m2, t1m3, m2, m0));
                     store256i(a, j3, montgomery_sub_256(t0m2, t1m3, m2, m0));
+                    if (j0 & 15) == 0 {
+                        const PREFETCH_OFFSET: usize = 512;
+                        let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
+                        _mm_prefetch(a_ptr.add(j0) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j1) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j2) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j3) as *const i8, _MM_HINT_T0);
+                    }
                     j0 += 8;
                     j1 += 8;
                     j2 += 8;
@@ -593,6 +616,14 @@ impl<const MOD: u32> NTT<MOD> {
                     store256i(a, j1, montgomery_sub_256(t0p2, t1p3, m2, m0));
                     store256i(a, j2, montgomery_add_256(t0m2, t1m3, m2, m0));
                     store256i(a, j3, montgomery_sub_256(t0m2, t1m3, m2, m0));
+                    if (j0 & 15) == 0 {
+                        const PREFETCH_OFFSET: usize = 512;
+                        let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
+                        _mm_prefetch(a_ptr.add(j0) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j1) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j2) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j3) as *const i8, _MM_HINT_T0);
+                    }
                     j0 += 8;
                     j1 += 8;
                     j2 += 8;
@@ -725,6 +756,14 @@ impl<const MOD: u32> NTT<MOD> {
                     store256i(a, j1, montgomery_add_256(t0m1, t2m3, m2, m0));
                     store256i(a, j2, montgomery_sub_256(t0p1, t2p3, m2, m0));
                     store256i(a, j3, montgomery_sub_256(t0m1, t2m3, m2, m0));
+                    if (j0 & 15) == 0 {
+                        const PREFETCH_OFFSET: usize = 512;
+                        let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
+                        _mm_prefetch(a_ptr.add(j0) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j1) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j2) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j3) as *const i8, _MM_HINT_T0);
+                    }
                     j0 += 8;
                     j1 += 8;
                     j2 += 8;
@@ -754,6 +793,14 @@ impl<const MOD: u32> NTT<MOD> {
                     store256i(a, j1, montgomery_add_256(t0m1, t2m3, m2, m0));
                     store256i(a, j2, montgomery_mul_256(montgomery_sub_256(t0p1, t2p3, m2, m0), ww256, r, m1));
                     store256i(a, j3, montgomery_mul_256(montgomery_sub_256(t0m1, t2m3, m2, m0), ww256, r, m1));
+                    if (j0 & 15) == 0 {
+                        const PREFETCH_OFFSET: usize = 512;
+                        let a_ptr = a.as_ptr().add(PREFETCH_OFFSET);
+                        _mm_prefetch(a_ptr.add(j0) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j1) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j2) as *const i8, _MM_HINT_T0);
+                        _mm_prefetch(a_ptr.add(j3) as *const i8, _MM_HINT_T0);
+                    }
                     j0 += 8;
                     j1 += 8;
                     j2 += 8;
