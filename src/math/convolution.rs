@@ -1,4 +1,4 @@
-use super::mod_int::{ModInt, primitive_root_const};
+use super::mod_int::{ModInt, inv_gcd, primitive_root_const, safe_mod};
 
 const MAX_RANK2: usize = 31;
 
@@ -205,14 +205,103 @@ pub fn convolution<const MOD: u32>(a: Vec<ModInt<MOD>>, b: Vec<ModInt<MOD>>) -> 
     let n = a.len();
     let m = b.len();
     if n == 0 || m == 0 {
-        return Vec::new();
+        return vec![];
     }
     let z = (n + m - 1).next_power_of_two();
-    debug_assert!((MOD as usize - 1) % z == 0);
+    debug_assert_eq!((MOD as usize - 1) % z, 0);
 
     if n.min(m) <= 60 {
         convolution_naive(&a, &b)
     } else {
         convolution_fft(a, b)
     }
+}
+
+fn convolution_mod_i64<const MOD: u32>(a: &[i64], b: &[i64]) -> Vec<i64> {
+    let n = a.len();
+    let m = b.len();
+    if n == 0 || m == 0 {
+        return vec![];
+    }
+    let z = (n + m - 1).next_power_of_two();
+    debug_assert_eq!((MOD as usize - 1) % z, 0);
+
+    let mut a2 = vec![ModInt::zero(); n];
+    for i in 0..n {
+        a2[i] = ModInt::from_i64(a[i]);
+    }
+    let mut b2 = vec![ModInt::zero(); m];
+    for i in 0..m {
+        b2[i] = ModInt::from_i64(b[i]);
+    }
+    let c2 = convolution::<MOD>(a2, b2);
+    let mut c = vec![0; n + m - 1];
+    for i in 0..(n + m - 1) {
+        c[i] = c2[i].val() as i64;
+    }
+    c
+}
+
+pub fn convolution_i64(a: &[i64], b: &[i64]) -> Vec<i64> {
+    let n = a.len();
+    let m = b.len();
+    if n == 0 || m == 0 {
+        return vec![];
+    }
+
+    const MOD1: u64 = 754974721; // 2^24
+    const MOD2: u64 = 167772161; // 2^25
+    const MOD3: u64 = 469762049; // 2^26
+    const M2M3: u64 = MOD2 * MOD3;
+    const M1M3: u64 = MOD1 * MOD3;
+    const M1M2: u64 = MOD1 * MOD2;
+    const M1M2M3: u64 = (MOD1 * MOD2).wrapping_mul(MOD3);
+
+    const I1: u64 = inv_gcd((MOD2 * MOD3) as i64, MOD1 as i64).1 as u64;
+    const I2: u64 = inv_gcd((MOD1 * MOD3) as i64, MOD2 as i64).1 as u64;
+    const I3: u64 = inv_gcd((MOD1 * MOD2) as i64, MOD3 as i64).1 as u64;
+
+    const MAX_AB_BIT: usize = 24;
+
+    debug_assert_eq!(MOD1 % (1 << MAX_AB_BIT), 1, "MOD1 isn't enough to support an array length of 2^24.");
+    debug_assert_eq!(MOD2 % (1 << MAX_AB_BIT), 1, "MOD2 isn't enough to support an array length of 2^24.");
+    debug_assert_eq!(MOD3 % (1 << MAX_AB_BIT), 1, "MOD3 isn't enough to support an array length of 2^24.");
+    debug_assert!(n + m - 1 <= (1 << MAX_AB_BIT));
+
+    let c1 = convolution_mod_i64::<754974721>(a, b);
+    let c2 = convolution_mod_i64::<167772161>(a, b);
+    let c3 = convolution_mod_i64::<469762049>(a, b);
+
+    let mut c = vec![0; n + m - 1];
+    for i in 0..(n + m - 1) {
+        let mut x: u64 = 0;
+        x = x.wrapping_add(((c1[i] as u64 * I1) % MOD1).wrapping_mul(M2M3));
+        x = x.wrapping_add(((c2[i] as u64 * I2) % MOD2).wrapping_mul(M1M3));
+        x = x.wrapping_add(((c3[i] as u64 * I3) % MOD3).wrapping_mul(M1M2));
+        // B = 2^63, -B <= x, r(real value) < B
+        // (x, x - M, x - 2M, or x - 3M) = r (mod 2B)
+        // r = c1[i] (mod MOD1)
+        // focus on MOD1
+        // r = x, x - M', x - 2M', x - 3M' (M' = M % 2^64) (mod 2B)
+        // r = x,
+        //     x - M' + (0 or 2B),
+        //     x - 2M' + (0, 2B or 4B),
+        //     x - 3M' + (0, 2B, 4B or 6B) (without mod!)
+        // (r - x) = 0, (0)
+        //           - M' + (0 or 2B), (1)
+        //           -2M' + (0 or 2B or 4B), (2)
+        //           -3M' + (0 or 2B or 4B or 6B) (3) (mod MOD1)
+        // we checked that
+        //   ((1) mod MOD1) mod 5 = 2
+        //   ((2) mod MOD1) mod 5 = 3
+        //   ((3) mod MOD1) mod 5 = 4
+        let mut diff = c1[i] - safe_mod(x as i64, MOD1 as i64);
+        if diff < 0 {
+            diff += MOD1 as i64;
+        }
+        const OFFSET: [u64; 5] = [0, 0, M1M2M3, 2 * M1M2M3, 3 * M1M2M3];
+        c[i] = x.wrapping_sub(OFFSET[diff as usize % 5]) as i64;
+    }
+
+    c
 }
