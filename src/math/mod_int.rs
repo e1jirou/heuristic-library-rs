@@ -1,3 +1,4 @@
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
 pub struct ModInt<const MOD: u32> {
     v: u32,

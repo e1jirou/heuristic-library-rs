@@ -201,7 +201,7 @@ fn convolution_fft<const MOD: u32>(mut a: Vec<ModInt<MOD>>, mut b: Vec<ModInt<MO
     a
 }
 
-pub fn convolution<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Vec<ModInt<MOD>> {
+pub fn convolution<const MOD: u32>(a: Vec<ModInt<MOD>>, b: Vec<ModInt<MOD>>) -> Vec<ModInt<MOD>> {
     let n = a.len();
     let m = b.len();
     if n == 0 || m == 0 {
@@ -211,8 +211,8 @@ pub fn convolution<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Vec<
     debug_assert!((MOD as usize - 1) % z == 0);
 
     if n.min(m) <= 60 {
-        convolution_naive(a, b)
+        convolution_naive(&a, &b)
     } else {
-        convolution_fft(a.to_vec(), b.to_vec())
+        convolution_fft(a, b)
     }
 }
