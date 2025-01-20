@@ -95,6 +95,8 @@ impl SimulatedAnnealingScheduler {
 
     pub fn print_log(&self) {
         let acceptance_rate = self.acceptances as f64 / self.trials as f64;
-        dbg!(self.trials, self.acceptances, acceptance_rate);
+        eprintln!("trial : {}", self.trials);
+        eprintln!("accept: {}", self.acceptances);
+        eprintln!("rate  : {}", acceptance_rate);
     }
 }
