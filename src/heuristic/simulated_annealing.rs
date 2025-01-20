@@ -3,11 +3,13 @@ use crate::heuristic::utility::get_time_sec;
 const SA_TIME_COUNTS: usize = 1 << 4;
 const SA_RANDOM_STEPS: usize = 1 << 12;
 
+#[derive(Debug, Clone)]
 pub enum SchedulerType {
     Exponential,
     Linear,
 }
 
+#[derive(Debug, Clone)]
 pub struct SimulatedAnnealingScheduler {
     schedule_type: SchedulerType,
     t_first: f64,
