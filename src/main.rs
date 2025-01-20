@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use proconio::input;
 
 #[allow(unused)]
@@ -47,29 +46,17 @@ impl<T: PartialOrd> ChangeMinMax for T {
     }
 }
 
-// separate with " ", and end with "\n"
-pub fn print_slice<T: std::fmt::Display>(v: &[T]) {
+pub fn print_slice<T: std::fmt::Display>(v: &[T], sep: &str) {
+    if v.is_empty() {
+        return;
+    }
     use std::io::Write;
     let mut handle = std::io::BufWriter::new(std::io::stdout().lock());
-    for i in 0..v.len() {
-        write!(handle, "{}{}", v[i], if i + 1 == v.len() { "\n" } else { " " }).unwrap();
+    for i in 0..(v.len() - 1) {
+        write!(handle, "{}{}", v[i], sep).unwrap();
     }
+    write!(handle, "{}{}", *v.last().unwrap(), "\n").unwrap();
     handle.flush().unwrap();
-}
-
-pub fn argsort<T: Ord>(v: &[T]) -> Vec<usize> {
-    (0..v.len()).sorted_by_key(|&i| &v[i]).collect()
-}
-
-pub fn rperm(p: &[usize]) -> Vec<usize> {
-    let n = p.len();
-    let mut ret = vec![usize::MAX; n];
-    for (i, &x) in p.iter().enumerate() {
-        debug_assert!(x < n);
-        debug_assert!(ret[x] == usize::MAX);
-        ret[x] = i;
-    }
-    ret
 }
 
 pub fn get_time_sec() -> f64 {
