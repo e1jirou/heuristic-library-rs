@@ -2,9 +2,11 @@ pub mod base64;
 #[allow(unused)]
 pub mod beam_search;
 pub mod bit;
+pub mod bitset;
 pub mod functions;
 pub mod geometry;
 pub mod grid;
+pub mod hash;
 #[allow(unused)]
 pub mod input;
 pub mod point;
