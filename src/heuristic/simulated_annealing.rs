@@ -5,12 +5,12 @@ const SA_RANDOM_STEPS: usize = 1 << 12;
 
 #[derive(Debug, Clone)]
 pub enum SchedulerType {
-    Exponential,
+    Exp,
     Linear,
 }
 
 #[derive(Debug, Clone)]
-pub struct SimulatedAnnealingScheduler {
+pub struct AnnealingScheduler {
     schedule_type: SchedulerType,
     t_first: f64,
     t_last: f64,
@@ -24,13 +24,13 @@ pub struct SimulatedAnnealingScheduler {
     acceptances: usize,
 }
 
-impl SimulatedAnnealingScheduler {
+impl AnnealingScheduler {
     pub fn new(
         schedule_type: SchedulerType,
         t_first: f64,
         t_last: f64,
         time_limit_sec: f64,
-    ) -> SimulatedAnnealingScheduler {
+    ) -> Self {
         debug_assert!(0.0 <= t_last && t_last <= t_first);
 
         let mut log2_random = vec![0.0; SA_RANDOM_STEPS];
@@ -43,7 +43,7 @@ impl SimulatedAnnealingScheduler {
 
         let mut rng = rand_pcg::Pcg64Mcg::seed_from_u64(0);
         log2_random.shuffle(&mut rng);
-        SimulatedAnnealingScheduler {
+        Self {
             schedule_type,
             t_first,
             t_last,
@@ -59,13 +59,16 @@ impl SimulatedAnnealingScheduler {
     }
 
     pub fn accept(&mut self, profit: f64) -> bool {
-        self.trials += 1;
         if profit >= 0.0 || profit > self.get_threshold() {
-            self.acceptances += 1;
+            self.accepted();
             return true;
         } else {
             return false;
         }
+    }
+
+    pub fn accepted(&mut self) {
+        self.acceptances += 1;
     }
 
     pub fn get_threshold(&mut self) -> f64 {
@@ -83,10 +86,11 @@ impl SimulatedAnnealingScheduler {
             self.time_counter -= 1;
             return;
         }
+        self.trials += SA_TIME_COUNTS;
         self.time_counter = SA_TIME_COUNTS - 1;
         let progress = (get_time_sec() - self.start_time_sec) / self.duration_sec;
         self.temperature = match self.schedule_type {
-            SchedulerType::Exponential => {
+            SchedulerType::Exp => {
                 self.t_first.powf(1.0 - progress) * self.t_last.powf(progress)
             }
             SchedulerType::Linear => self.t_first * (1.0 - progress) + self.t_last * progress,
