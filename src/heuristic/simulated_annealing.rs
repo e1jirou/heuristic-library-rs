@@ -63,12 +63,18 @@ impl AnnealingScheduler {
             self.accepted();
             return true;
         } else {
+            self.rejected();
             return false;
         }
     }
 
     pub fn accepted(&mut self) {
+        self.trials += 1;
         self.acceptances += 1;
+    }
+
+    pub fn rejected(&mut self) {
+        self.trials += 1;
     }
 
     pub fn get_threshold(&mut self) -> f64 {
@@ -86,7 +92,6 @@ impl AnnealingScheduler {
             self.time_counter -= 1;
             return;
         }
-        self.trials += SA_TIME_COUNTS;
         self.time_counter = SA_TIME_COUNTS - 1;
         let progress = (get_time_sec() - self.start_time_sec) / self.duration_sec;
         self.temperature = match self.schedule_type {
