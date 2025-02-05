@@ -60,7 +60,7 @@ impl DualGraph {
                 match edge_sharing.get(&edge_id) {
                     Some(&q) => edges.push((p, q, u, v)),
                     None => {
-                        edge_sharing.insert(edge_id, i);
+                        edge_sharing.insert(edge_id, p);
                     },
                 }
             }
