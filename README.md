@@ -18,7 +18,7 @@
     ```bash
     python3 -m http.server 8000
     ```
-1. See the standings. [Click here](http://[::]:8000/?contest=data).
+1. See the standings. [Click here](http://[::]:8000/?contest=data). If the updates are not reflected, please perform a hard reload by pressing Ctrl + Shift + R (Windows/Linux) or Cmd + Shift + R (Mac).
 
 ## Links
 [Official Usage of Standing Tool](https://img.atcoder.jp/ahc_standings/usage.html)
