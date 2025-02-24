@@ -8,11 +8,11 @@
     ```
 1. Execute the runner.
     ```bash
-    python3 test_interactive.py [solution name]
+    python3 test_interactive.py [solution name] | tee out.txt
     ```
     or
     ``` bash
-    python3 test_non_interactive.py [solution name]
+    python3 test_non_interactive.py [solution name] | tee out.txt
     ```
 1. Start a simple HTTP server.
     ```bash

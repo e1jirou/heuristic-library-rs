@@ -126,7 +126,7 @@ def main():
     results = []
     for future in concurrent.futures.as_completed(futures):
         result = future.result()
-        print(str(result))
+        print(str(result), flush=True)
         results.append(result)
 
     results.sort(key=lambda x: x.seed)
