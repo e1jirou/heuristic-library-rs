@@ -49,10 +49,10 @@ struct SegmentTree {
 }
 
 impl SegmentTree {
-    fn new(n: usize) -> SegmentTree {
+    fn new(n: usize) -> Self {
         let size = n.next_power_of_two();
         let log = size.trailing_zeros() as usize;
-        SegmentTree {
+        Self {
             n,
             log,
             size,
@@ -105,8 +105,8 @@ struct Selector {
 }
 
 impl Selector {
-    fn new(beam_width: usize) -> Selector {
-        Selector {
+    fn new(beam_width: usize) -> Self {
+        Self {
             beam_width,
             candidates: Vec::with_capacity(beam_width),
             hash_to_index: rustc_hash::FxHashMap::default(),
@@ -197,7 +197,7 @@ pub struct State {
 
 // data updated in depth first search
 impl State {
-    pub fn new() -> State {
+    pub fn new() -> Self {
         todo!();
     }
 
@@ -247,8 +247,8 @@ struct Tree {
 }
 
 impl Tree {
-    fn new(state: State, config: &Config) -> Tree {
-        Tree {
+    fn new(state: State, config: &Config) -> Self {
+        Self {
             state,
             curr_tour: Vec::with_capacity(config.tour_capacity),
             next_tour: Vec::with_capacity(config.tour_capacity),
