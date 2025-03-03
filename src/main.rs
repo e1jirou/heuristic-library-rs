@@ -46,19 +46,6 @@ impl<T: PartialOrd> ChangeMinMax for T {
     }
 }
 
-pub fn print_slice<T: std::fmt::Display>(v: &[T], sep: &str) {
-    if v.is_empty() {
-        return;
-    }
-    use std::io::Write;
-    let mut handle = std::io::BufWriter::new(std::io::stdout().lock());
-    for i in 0..(v.len() - 1) {
-        write!(handle, "{}{}", v[i], sep).unwrap();
-    }
-    write!(handle, "{}{}", *v.last().unwrap(), "\n").unwrap();
-    handle.flush().unwrap();
-}
-
 pub fn get_time_sec() -> f64 {
     static mut STIME: f64 = -1.0;
     let t = std::time::SystemTime::now()
