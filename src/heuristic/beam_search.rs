@@ -3,6 +3,7 @@ type Hash = u64;
 
 // beam search setting
 // capacity = 0 is OK.
+#[derive(Debug, Clone)]
 pub struct Config {
     max_turn: usize,
     beam_width: usize,
@@ -11,14 +12,14 @@ pub struct Config {
 
 // data for a state transition
 // Try to minimize memory usage.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Action {
     // TODO
 }
 
 // data for evaluation
 // Try to minimize memory usage.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Evaluator {
     // TODO
 }
@@ -30,8 +31,8 @@ impl Evaluator {
     }
 }
 
-// data for an espansion node
-#[derive(Clone)]
+// data for an expansion node
+#[derive(Debug, Clone)]
 struct Candidate {
     action: Action,
     evaluator: Evaluator,
@@ -41,6 +42,7 @@ struct Candidate {
 }
 
 // erasable max priority queue
+#[derive(Debug, Clone)]
 struct SegmentTree {
     n: usize,
     log: usize,
@@ -96,6 +98,7 @@ impl SegmentTree {
 
 // select beam width candidates from better evaluation
 // It remains only the best one for same hash candidates.
+#[derive(Debug, Clone)]
 struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
@@ -191,6 +194,7 @@ impl Selector {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct State {
     // TODO
 }
@@ -224,19 +228,20 @@ impl State {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum EdgeProperty {
     Leaf,
     Forward,
     Backward,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Edge {
     property: EdgeProperty,
     action: Action,
 }
 
+#[derive(Debug, Clone)]
 struct Tree {
     state: State,
     curr_tour: Vec<Edge>,
