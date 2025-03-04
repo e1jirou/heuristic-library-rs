@@ -1,3 +1,23 @@
+use std::{collections::HashSet, hash::{BuildHasherDefault, Hasher}};
+
+#[derive(Default)]
+pub struct NoHashHasher {
+    value: u64,
+}
+
+impl Hasher for NoHashHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        self.value = u64::from_ne_bytes(bytes[..8].try_into().unwrap());
+    }
+
+    fn finish(&self) -> u64 {
+        self.value
+    }
+}
+
+pub type NoHashSet = HashSet<u64, BuildHasherDefault<NoHashHasher>>;
+
+
 pub fn xorshift64(mut x: u64) -> u64 {
     x ^= x << 13;
     x ^= x >> 7;
