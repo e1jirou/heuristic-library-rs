@@ -52,18 +52,26 @@ struct SegmentTree {
 
 impl SegmentTree {
     fn new(n: usize) -> Self {
-        let size = n.next_power_of_two();
-        let log = size.trailing_zeros() as usize;
-        Self {
-            n,
-            log,
-            size,
-            d: vec![(Cost::MIN, usize::MAX); 2 * size],
-        }
+        let mut ret = Self {
+            n: 0,
+            log: 0,
+            size: 0,
+            d: Vec::new(),
+        };
+        ret.init(n);
+        ret
+    }
+
+    fn init(&mut self, n: usize) {
+        self.n = n;
+        self.size = n.next_power_of_two();
+        self.log = self.size.trailing_zeros() as usize;
+        self.d.clear();
+        self.d.resize(2 * self.size, (Cost::MIN, usize::MAX));
     }
 
     fn build(&mut self, candidates: &Vec<Candidate>) {
-        debug_assert_eq!(candidates.len(), self.n);
+        self.init(candidates.len());
         for i in 0..self.n {
             self.d[self.size + i] = (candidates[i].cost, i);
         }
