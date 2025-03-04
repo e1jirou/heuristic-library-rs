@@ -121,6 +121,7 @@ impl Selector {
     // add a candidate
     // finished = true iff it can get feasible solution through the candidate in the turn minimizing problem.
     // It returns true iff it provisionally accept the candidate.
+    #[inline(always)]
     fn push(&mut self, candidate: Candidate, finished: bool) -> bool {
         let cost = candidate.cost;
         if finished {
