@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use proconio::input;
 
 #[allow(unused)]
@@ -9,7 +11,7 @@ fn main() {
     #[allow(unused)]
     let input = read_input();
 
-    std::process::exit(0);
+    exit(0);
 }
 
 struct Input {
