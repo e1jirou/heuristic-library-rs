@@ -1,6 +1,6 @@
 type Cost = i32;
 type Hash = u64;
-type Idx = u32;
+type NodeIndex = u32;
 
 // beam search setting
 // capacity = 0 is OK.
@@ -39,7 +39,7 @@ struct Candidate {
     evaluator: Evaluator,
     cost: Cost,
     hash: Hash,
-    parent: Idx,
+    parent: NodeIndex,
 }
 
 // erasable max priority queue
@@ -272,7 +272,7 @@ impl State {
     // - evaluator: current evaluator
     // - hash: current hash
     // - parent: current node ID (parent node ID for next state)
-    fn expand(&mut self, evaluator: &Evaluator, mut hash: Hash, parent: Idx, selector: &mut MultiSelectors) {
+    fn expand(&mut self, evaluator: &Evaluator, mut hash: Hash, parent: NodeIndex, selector: &mut MultiSelectors) {
         todo!();
     }
 
@@ -350,10 +350,10 @@ struct Node {
     action: Action,
     evaluator: Evaluator,
     hash: Hash,
-    parent: Idx,
-    child: Idx,
-    left: Idx,
-    right: Idx,
+    parent: NodeIndex,
+    child: NodeIndex,
+    left: NodeIndex,
+    right: NodeIndex,
     active: bool,
 }
 
@@ -371,7 +371,7 @@ impl Node {
         }
     }
 
-    fn new(candidate: &Candidate, right: Idx) -> Self {
+    fn new(candidate: &Candidate, right: NodeIndex) -> Self {
         Self {
             action: candidate.action.clone(),
             evaluator: candidate.evaluator.clone(),
@@ -390,15 +390,15 @@ impl Node {
 struct Tree {
     state: State,
     nodes: ObjectPool<Node>,
-    root: Idx,
-    remove_nodes: std::collections::VecDeque<Vec<Idx>>,
+    root: NodeIndex,
+    remove_nodes: std::collections::VecDeque<Vec<NodeIndex>>,
 }
 
 impl Tree {
     fn new(state: State, config: &Config) -> Self {
         let (action, evaluator, hash) = state.get_initial_data();
         let mut nodes = ObjectPool::with_capacity(config.nodes_capacity);
-        let root = nodes.push(Node::root(action, evaluator, hash)) as Idx;
+        let root = nodes.push(Node::root(action, evaluator, hash)) as NodeIndex;
         let remove_nodes = std::collections::VecDeque::new();
         Self { state, nodes, root, remove_nodes }
     }
@@ -438,7 +438,7 @@ impl Tree {
     }
 
     // get path from the root to the node `v`
-    fn get_path(&self, mut v: Idx) -> Vec<Action> {
+    fn get_path(&self, mut v: NodeIndex) -> Vec<Action> {
         // dbg!(self.nodes.data.capacity());
 
         let mut path = Vec::new();
@@ -451,10 +451,10 @@ impl Tree {
     }
 
     // add new node
-    fn add_leaf(&mut self, candidate: &Candidate) -> Idx {
+    fn add_leaf(&mut self, candidate: &Candidate) -> NodeIndex {
         let parent = candidate.parent;
         let sibling = self.nodes[parent as usize].child;
-        let v = self.nodes.push(Node::new(candidate, sibling)) as Idx;
+        let v = self.nodes.push(Node::new(candidate, sibling)) as NodeIndex;
 
         self.nodes[parent as usize].child = v;
 
@@ -474,7 +474,7 @@ impl Tree {
     }
 
     // move to the leftist node in the subtree rooted at `v`
-    fn move_to_leaf(&mut self, mut v: Idx) -> Idx {
+    fn move_to_leaf(&mut self, mut v: NodeIndex) -> NodeIndex {
         debug_assert!(self.nodes[v as usize].active);
         let mut child = self.nodes[v as usize].child;
         while child != !0 {
@@ -494,7 +494,7 @@ impl Tree {
     }
 
     // move to the ancestor of `v` which has the right child
-    fn move_to_ancestor(&mut self, mut v: Idx) -> Idx {
+    fn move_to_ancestor(&mut self, mut v: NodeIndex) -> NodeIndex {
         while v != self.root {
             self.state.move_backward(&self.nodes[v as usize].action);
 
@@ -539,7 +539,7 @@ impl Tree {
     }
 
     // remove the node `v` and its ancestors while they have no child
-    fn remove_leaf(&mut self, mut v: Idx) {
+    fn remove_leaf(&mut self, mut v: NodeIndex) {
         loop {
             let left = self.nodes[v as usize].left;
             let right = self.nodes[v as usize].right;
