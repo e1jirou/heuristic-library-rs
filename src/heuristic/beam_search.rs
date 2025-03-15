@@ -1,5 +1,6 @@
 type Cost = i32;
 type Hash = u64;
+type CandidateIndex = u32;
 
 // beam search setting
 // capacity = 0 is OK.
@@ -47,7 +48,7 @@ struct SegmentTree {
     n: usize,
     log: usize,
     size: usize,
-    d: Vec<(Cost, usize)>,
+    d: Vec<(Cost, CandidateIndex)>,
 }
 
 impl SegmentTree {
@@ -67,13 +68,13 @@ impl SegmentTree {
         self.size = n.next_power_of_two();
         self.log = self.size.trailing_zeros() as usize;
         self.d.clear();
-        self.d.resize(2 * self.size, (Cost::MIN, usize::MAX));
+        self.d.resize(2 * self.size, (Cost::MIN, CandidateIndex::MAX));
     }
 
     fn build(&mut self, candidates: &Vec<Candidate>) {
         self.init(candidates.len());
         for i in 0..self.n {
-            self.d[self.size + i] = (candidates[i].cost, i);
+            self.d[self.size + i] = (candidates[i].cost, i as CandidateIndex);
         }
         for i in (1..self.size).rev() {
             self.update(i);
@@ -83,13 +84,13 @@ impl SegmentTree {
     fn set(&mut self, p: usize, cost: Cost) {
         debug_assert!(p < self.n);
         let q = p + self.size;
-        self.d[q] = (cost, p);
+        self.d[q] = (cost, p as CandidateIndex);
         for i in 1..=self.log {
             self.update(q >> i);
         }
     }
 
-    fn top(&self) -> (Cost, usize) {
+    fn top(&self) -> (Cost, CandidateIndex) {
         self.d[1]
     }
 
@@ -110,7 +111,7 @@ impl SegmentTree {
 struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
-    hash_to_index: rustc_hash::FxHashMap<Hash,usize>,
+    hash_to_index: rustc_hash::FxHashMap<Hash,CandidateIndex>,
     segtree: SegmentTree,
     finished_candidate: Option<Candidate>,
 }
@@ -155,6 +156,7 @@ impl Selector {
         match self.hash_to_index.get(&hash) {
             Some(&p) => {
                 // contains a candidate with same hash
+                let p = p as usize;
                 debug_assert_eq!(self.candidates[p].hash, hash);
                 if cost < self.candidates[p].cost {
                     self.candidates[p] = candidate;
@@ -169,14 +171,14 @@ impl Selector {
             None => {
                 // does not contain a candidate with same hash
                 if self.built_segtree() {
-                    let p = self.segtree.top().1;
+                    let p = self.segtree.top().1 as usize;
                     self.hash_to_index.remove(&self.candidates[p].hash);
-                    self.hash_to_index.insert(hash, p);
+                    self.hash_to_index.insert(hash, p as CandidateIndex);
                     self.candidates[p] = candidate;
                     self.segtree.set(p, cost);
                 } else {
                     let p = self.candidates.len();
-                    self.hash_to_index.insert(hash, p);
+                    self.hash_to_index.insert(hash, p as CandidateIndex);
                     self.candidates.push(candidate);
                     if self.built_segtree() {
                         // candidates become full
