@@ -9,6 +9,7 @@ pub mod grid;
 pub mod hash;
 #[allow(unused)]
 pub mod input;
+#[allow(unused)]
 pub mod multi_step_beam_search;
 pub mod point;
 pub mod simulated_annealing;
