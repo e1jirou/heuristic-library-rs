@@ -13,7 +13,7 @@ pub struct Config {
 
 // data for a state transition
 // Try to minimize memory usage.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Action {
     // TODO
 }
@@ -97,11 +97,7 @@ impl SegmentTree {
     fn update(&mut self, k: usize) {
         let (c0, p0) = self.d[2 * k];
         let (c1, p1) = self.d[2 * k + 1];
-        self.d[k] = if c0 >= c1 {
-            (c0, p0)
-        } else {
-            (c1, p1)
-        };
+        self.d[k] = if c0 >= c1 { (c0, p0) } else { (c1, p1) };
     }
 }
 
@@ -111,7 +107,7 @@ impl SegmentTree {
 struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
-    hash_to_index: rustc_hash::FxHashMap<Hash,usize>,
+    hash_to_index: rustc_hash::FxHashMap<Hash, usize>,
     segtree: SegmentTree,
     finished_candidate: Option<Candidate>,
 }
@@ -190,7 +186,11 @@ impl Selector {
     }
 
     fn get_best_candidate(&self) -> Candidate {
-        self.candidates.iter().min_by_key(|candidate| candidate.cost).unwrap().clone()
+        self.candidates
+            .iter()
+            .min_by_key(|candidate| candidate.cost)
+            .unwrap()
+            .clone()
     }
 
     fn clear(&mut self) {
@@ -201,6 +201,53 @@ impl Selector {
 
     fn built_segtree(&self) -> bool {
         self.candidates.len() == self.beam_width
+    }
+}
+
+#[derive(Debug, Clone)]
+struct MultiSelectors {
+    beam_width: usize,
+    selectors: std::collections::VecDeque<Selector>,
+    step_max: usize,
+}
+
+impl MultiSelectors {
+    fn new(beam_width: usize) -> Self {
+        Self {
+            beam_width,
+            selectors: std::collections::VecDeque::new(),
+            step_max: 0,
+        }
+    }
+
+    #[inline(always)]
+    fn push_candidate(&mut self, candidate: Candidate, finished: bool, step: usize) -> bool {
+        debug_assert!(step >= 1);
+        while self.selectors.len() < step {
+            self.selectors.push_back(Selector::new(self.beam_width));
+        }
+        if self.selectors[step - 1].push(candidate, finished) {
+            if self.step_max < step {
+                self.step_max = step;
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    fn reset_step_max(&mut self) {
+        self.step_max = 1;
+    }
+
+    fn pop_front(&mut self) -> Selector {
+        debug_assert!(!self.selectors.is_empty());
+        self.selectors.pop_front().unwrap()
+    }
+
+    fn push_back(&mut self, mut selector: Selector) {
+        selector.clear();
+        self.selectors.push_back(selector);
     }
 }
 
@@ -225,7 +272,7 @@ impl State {
     // - evaluator: current evaluator
     // - hash: current hash
     // - parent: current node ID (parent node ID for next state)
-    fn expand(&self, evaluator: &Evaluator, mut hash: Hash, parent: Idx, selector: &mut Selector) {
+    fn expand(&mut self, evaluator: &Evaluator, mut hash: Hash, parent: Idx, selector: &mut MultiSelectors) {
         todo!();
     }
 
@@ -307,6 +354,7 @@ struct Node {
     child: Idx,
     left: Idx,
     right: Idx,
+    active: bool,
 }
 
 impl Node {
@@ -319,6 +367,7 @@ impl Node {
             child: !0,
             left: !0,
             right: !0,
+            active: true,
         }
     }
 
@@ -331,6 +380,7 @@ impl Node {
             child: !0,
             left: !0,
             right,
+            active: true,
         }
     }
 }
@@ -341,6 +391,7 @@ struct Tree {
     state: State,
     nodes: ObjectPool<Node>,
     root: Idx,
+    remove_nodes: std::collections::VecDeque<Vec<Idx>>,
 }
 
 impl Tree {
@@ -348,26 +399,41 @@ impl Tree {
         let (action, evaluator, hash) = state.get_initial_data();
         let mut nodes = ObjectPool::with_capacity(config.nodes_capacity);
         let root = nodes.push(Node::root(action, evaluator, hash)) as Idx;
-        Self {
-            state,
-            nodes,
-            root,
-        }
+        let remove_nodes = std::collections::VecDeque::new();
+        Self { state, nodes, root, remove_nodes }
     }
 
     // add candidates while dfs
-    fn dfs(&mut self, selector: &mut Selector) {
+    fn dfs(&mut self, multi_selectors: &mut MultiSelectors) {
+        self.remove_useless_nodes();
         self.update_root();
 
         let mut v = self.root;
+
+        if !self.nodes[v as usize].active {
+            // no active nodes
+            return;
+        }
+
         loop {
             v = self.move_to_leaf(v);
-            self.state.expand(&self.nodes[v as usize].evaluator, self.nodes[v as usize].hash, v, selector);
+
+            multi_selectors.reset_step_max();
+            self.state.expand(
+                &self.nodes[v as usize].evaluator,
+                self.nodes[v as usize].hash,
+                v,
+                multi_selectors,
+            );
+            while self.remove_nodes.len() < multi_selectors.step_max {
+                self.remove_nodes.push_back(Vec::new());
+            }
+            self.remove_nodes[multi_selectors.step_max - 1].push(v);
+
             v = self.move_to_ancestor(v);
             if v == self.root {
                 break;
             }
-            v = self.move_to_right(v);
         }
     }
 
@@ -395,14 +461,56 @@ impl Tree {
         if sibling != !0 {
             self.nodes[sibling as usize].left = v;
         }
+        // activate ancestors
+        let mut u = parent;
+        while !self.nodes[u as usize].active {
+            self.nodes[u as usize].active = true;
+            if u == self.root {
+                break;
+            }
+            u = self.nodes[u as usize].parent;
+        }
         v
     }
 
-    // remove the node `v` and its ancestors if they have no child
-    fn remove_if_leaf(&mut self, v: Idx) {
-        if self.nodes[v as usize].child == !0 {
-            self.remove_leaf(v);
+    // move to the leftist node in the subtree rooted at `v`
+    fn move_to_leaf(&mut self, mut v: Idx) -> Idx {
+        debug_assert!(self.nodes[v as usize].active);
+        let mut child = self.nodes[v as usize].child;
+        while child != !0 {
+            // move to right while the node is inactive
+            while !self.nodes[child as usize].active {
+                child = self.nodes[child as usize].right;
+                debug_assert_ne!(child, !0);
+            }
+            self.nodes[v as usize].active = false;
+            v = child;
+            self.state.move_forward(&self.nodes[child as usize].action);
+            child = self.nodes[child as usize].child;
         }
+        debug_assert!(self.nodes[v as usize].active);
+        self.nodes[v as usize].active = false;
+        v
+    }
+
+    // move to the ancestor of `v` which has the right child
+    fn move_to_ancestor(&mut self, mut v: Idx) -> Idx {
+        while v != self.root {
+            self.state.move_backward(&self.nodes[v as usize].action);
+
+            // move to right while the node is inactive
+            let mut u = self.nodes[v as usize].right;
+            while u != !0 {
+                if self.nodes[u as usize].active {
+                    self.state.move_forward(&self.nodes[u as usize].action);
+                    return u;
+                }
+                u = self.nodes[u as usize].right;
+            }
+
+            v = self.nodes[v as usize].parent;
+        }
+        self.root
     }
 
     // do not round trip the direct road
@@ -415,32 +523,19 @@ impl Tree {
         }
     }
 
-    // move to the leftist node in the subtree rooted at `v`
-    fn move_to_leaf(&mut self, mut v: Idx) -> Idx {
-        let mut child = self.nodes[v as usize].child;
-        while child != !0 {
-            v = child;
-            self.state.move_forward(&self.nodes[child as usize].action);
-            child = self.nodes[child as usize].child;
+    // remove useless nodes
+    fn remove_useless_nodes(&mut self) {
+        if self.remove_nodes.is_empty() {
+            return;
         }
-        v
-    }
-
-    // move to the ancestor of `v` which has the right child
-    fn move_to_ancestor(&mut self, mut v: Idx) -> Idx {
-        while v != self.root && self.nodes[v as usize].right == !0 {
-            self.state.move_backward(&self.nodes[v as usize].action);
-            v = self.nodes[v as usize].parent;
+        let mut remove_nodes_front = self.remove_nodes.pop_front().unwrap();
+        for &v in &remove_nodes_front {
+            if self.nodes[v as usize].child == !0 {
+                self.remove_leaf(v);
+            }
         }
-        v
-    }
-
-    // move to the right sibling of `v`
-    fn move_to_right(&mut self, v: Idx) -> Idx {
-        self.state.move_backward(&self.nodes[v as usize].action);
-        let v = self.nodes[v as usize].right;
-        self.state.move_forward(&self.nodes[v as usize].action);
-        v
+        remove_nodes_front.clear();
+        self.remove_nodes.push_back(remove_nodes_front);
     }
 
     // remove the node `v` and its ancestors while they have no child
@@ -472,14 +567,13 @@ impl Tree {
 
 pub fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
     let mut tree = Tree::new(state, config);
-    let mut curr_nodes = Vec::with_capacity(config.beam_width);
-    let mut next_nodes = Vec::with_capacity(config.beam_width);
-    let mut selector = Selector::new(config.beam_width);
+    let mut multi_selectors = MultiSelectors::new(config.beam_width);
 
     for turn in 0..config.max_turn {
         // add candidates to selector
-        tree.dfs(&mut selector);
+        tree.dfs(&mut multi_selectors);
 
+        let selector = multi_selectors.pop_front();
         if let Some(candidate) = &selector.finished_candidate {
             // find the feasible solution in turn minimizing problem
             let mut ret = tree.get_path(candidate.parent);
@@ -495,21 +589,10 @@ pub fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
         }
         // add new nodes
         for candidate in &selector.candidates {
-            next_nodes.push(tree.add_leaf(candidate));
+            tree.add_leaf(candidate);
         }
-        if next_nodes.is_empty() {
-            // cannot find the feasible solution
-            return None;
-        }
-        // remove useless nodes
-        for &v in &curr_nodes {
-            tree.remove_if_leaf(v);
-        }
-        // double buffering
-        std::mem::swap(&mut curr_nodes, &mut next_nodes);
-        next_nodes.clear();
 
-        selector.clear();
+        multi_selectors.push_back(selector);
     }
 
     unreachable!();
