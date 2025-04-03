@@ -136,7 +136,7 @@ def main():
     log2scores = np.log2(scores)
     times = np.array([result.time_elapsed_sec for result in results])
     print(f"Score: Avg. {np.mean(scores):.3f}, Min. {np.min(scores):.3f}, Max. {np.max(scores):.3f}")
-    print(f"log2(Score): Avg. {np.mean(log2scores):.3f}, Min. {np.min(log2scores):.3f}, Max. {np.max(log2scores):.3f}")
+    print(f"log2(Score): Avg. {np.mean(log2scores):.6f}, Min. {np.min(log2scores):.6f}, Max. {np.max(log2scores):.6f}")
     print(f"Time: Avg. {np.mean(times):.3f}, Min. {np.min(times):.3f}, Max. {np.max(times):.3f}")
 
     clean()
