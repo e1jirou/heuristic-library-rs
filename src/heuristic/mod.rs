@@ -14,3 +14,4 @@ pub mod multi_step_beam_search;
 pub mod point;
 pub mod simulated_annealing;
 pub mod utility;
+pub mod xorshift;
