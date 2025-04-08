@@ -55,4 +55,13 @@ impl XorShift32 {
         debug_assert!(l <= r);
         l + self.gen() as f64 * ((r - l) / ((1u64 << 32) as f64))
     }
+
+    #[inline(always)]
+    pub fn shuffle(&mut self, v: &mut [usize]) {
+        let n = v.len();
+        for i in (1..n).rev() {
+            let j = self.gen_range(0, i + 1);
+            v.swap(i, j);
+        }
+    }
 }
