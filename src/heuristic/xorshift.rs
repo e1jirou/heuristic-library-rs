@@ -64,4 +64,14 @@ impl XorShift32 {
             v.swap(i, j);
         }
     }
+
+    #[inline(always)]
+    pub fn partial_shuffle(&mut self, v: &mut [usize], n: usize) {
+        let m = v.len();
+        debug_assert!(n <= m);
+        for i in 0..n {
+            let j = self.gen_range(i, m);
+            v.swap(i, j);
+        }
+    }
 }
