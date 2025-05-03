@@ -72,3 +72,48 @@ pub fn get_time_sec() -> f64 {
         ms - STIME
     }
 }
+
+#[inline(always)]
+pub fn encode2(a: usize, b: usize, bw: usize) -> usize {
+    debug_assert!(b < (1 << bw));
+    (a << bw) | b
+}
+
+#[inline(always)]
+pub fn decode2(ab: usize, bw: usize) -> (usize, usize) {
+    let a = ab >> bw;
+    let b = ab & ((1 << bw) - 1);
+    (a, b)
+}
+
+#[inline(always)]
+pub fn encode3(a: usize, b: usize, c: usize, bw: usize, cw: usize) -> usize {
+    debug_assert!(b < (1 << bw));
+    debug_assert!(c < (1 << cw));
+    (a << (bw + cw)) | (b << cw) | c
+}
+
+#[inline(always)]
+pub fn decode3(abc: usize, bw: usize, cw: usize) -> (usize, usize, usize) {
+    let a = abc >> (bw + cw);
+    let b = (abc >> cw) & ((1 << bw) - 1);
+    let c = abc & ((1 << cw) - 1);
+    (a, b, c)
+}
+
+#[inline(always)]
+pub fn encode4(a: usize, b: usize, c: usize, d: usize, bw: usize, cw: usize, dw: usize) -> usize {
+    debug_assert!(b < (1 << bw));
+    debug_assert!(c < (1 << cw));
+    debug_assert!(d < (1 << dw));
+    (a << (bw + cw + dw)) | (b << (cw + dw)) | (c << dw) | d
+}
+
+#[inline(always)]
+pub fn decode4(abcd: usize, bw: usize, cw: usize, dw: usize) -> (usize, usize, usize, usize) {
+    let a = abcd >> (bw + cw + dw);
+    let b = (abcd >> (cw + dw)) & ((1 << bw) - 1);
+    let c = (abcd >> dw) & ((1 << cw) - 1);
+    let d = abcd & ((1 << dw) - 1);
+    (a, b, c, d)
+}
