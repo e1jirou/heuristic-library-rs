@@ -5,7 +5,7 @@ type CandidateIndex = u32;
 // beam search setting
 // capacity = 0 is OK.
 #[derive(Debug, Clone)]
-pub struct Config {
+struct Config {
     max_turn: usize,
     beam_width: usize,
     tour_capacity: usize,
@@ -14,7 +14,7 @@ pub struct Config {
 // data for a state transition
 // Try to minimize memory usage.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Action {
+struct Action {
     // TODO
 }
 
@@ -68,7 +68,8 @@ impl SegmentTree {
         self.size = n.next_power_of_two();
         self.log = self.size.trailing_zeros() as usize;
         self.d.clear();
-        self.d.resize(2 * self.size, (Cost::MIN, CandidateIndex::MAX));
+        self.d
+            .resize(2 * self.size, (Cost::MIN, CandidateIndex::MAX));
     }
 
     fn build(&mut self, candidates: &Vec<Candidate>) {
@@ -97,11 +98,7 @@ impl SegmentTree {
     fn update(&mut self, k: usize) {
         let (c0, p0) = self.d[2 * k];
         let (c1, p1) = self.d[2 * k + 1];
-        self.d[k] = if c0 >= c1 {
-            (c0, p0)
-        } else {
-            (c1, p1)
-        };
+        self.d[k] = if c0 >= c1 { (c0, p0) } else { (c1, p1) };
     }
 }
 
@@ -111,7 +108,7 @@ impl SegmentTree {
 struct Selector {
     beam_width: usize,
     candidates: Vec<Candidate>,
-    hash_to_index: rustc_hash::FxHashMap<Hash,CandidateIndex>,
+    hash_to_index: rustc_hash::FxHashMap<Hash, CandidateIndex>,
     segtree: SegmentTree,
     finished_candidate: Option<Candidate>,
 }
@@ -191,7 +188,11 @@ impl Selector {
     }
 
     fn get_best_candidate(&self) -> Candidate {
-        self.candidates.iter().min_by_key(|candidate| candidate.cost).unwrap().clone()
+        self.candidates
+            .iter()
+            .min_by_key(|candidate| candidate.cost)
+            .unwrap()
+            .clone()
     }
 
     fn clear(&mut self) {
@@ -206,18 +207,18 @@ impl Selector {
 }
 
 #[derive(Debug, Clone)]
-pub struct State {
+struct State {
     // TODO
 }
 
 // data updated in depth first search
 impl State {
-    pub fn new() -> Self {
+    fn new() -> Self {
         todo!();
     }
 
     // return the initial value of Evaluator and Hash
-    fn get_initial_data(&self) -> (Evaluator, Hash) {
+    fn get_initial_data(&self) -> (Action, Evaluator, Hash) {
         todo!();
     }
 
@@ -226,7 +227,14 @@ impl State {
     // - evaluator: current evaluator
     // - hash: current hash
     // - parent: current node ID (parent node ID for next state)
-    fn expand(&self, evaluator: &Evaluator, mut hash: Hash, parent: usize, selector: &mut Selector) {
+    fn expand(
+        &self,
+        action: &Action,
+        evaluator: &Evaluator,
+        mut hash: Hash,
+        parent: usize,
+        selector: &mut Selector,
+    ) {
         todo!();
     }
 
@@ -278,8 +286,8 @@ impl Tree {
     fn dfs(&mut self, selector: &mut Selector) {
         if self.curr_tour.is_empty() {
             // the first turn
-            let (evaluator, hash) = self.state.get_initial_data();
-            self.state.expand(&evaluator, hash, 0, selector);
+            let (action, evaluator, hash) = self.state.get_initial_data();
+            self.state.expand(&action, &evaluator, hash, 0, selector);
             return;
         }
 
@@ -289,12 +297,13 @@ impl Tree {
                 EdgeProperty::Leaf => {
                     let (evaluator, hash) = &self.leaves[leaf_id];
                     self.state.move_forward(&edge.action);
-                    self.state.expand(evaluator, *hash, leaf_id, selector);
+                    self.state
+                        .expand(&edge.action, evaluator, *hash, leaf_id, selector);
                     self.state.move_backward(&edge.action);
                     leaf_id += 1;
                 }
                 EdgeProperty::Forward => self.state.move_forward(&edge.action),
-                EdgeProperty::Backward => self.state.move_backward(&edge.action)
+                EdgeProperty::Backward => self.state.move_backward(&edge.action),
             }
         }
     }
@@ -311,23 +320,27 @@ impl Tree {
                     property: EdgeProperty::Leaf,
                     action: candidate.action.clone(),
                 });
-                self.leaves.push((candidate.evaluator.clone(), candidate.hash));
+                self.leaves
+                    .push((candidate.evaluator.clone(), candidate.hash));
             }
             return;
         }
 
         // bucket sort
         for candidate in candidates {
-            self.buckets[candidate.parent as usize].push(
-                (candidate.action.clone(), candidate.evaluator.clone(), candidate.hash));
+            self.buckets[candidate.parent as usize].push((
+                candidate.action.clone(),
+                candidate.evaluator.clone(),
+                candidate.hash,
+            ));
         }
 
         let mut curr_tour_id = 0;
-        
+
         // do not repeat direct road
         let is_direct_road = |curr_tour_id: usize, curr_tour: &Vec<Edge>| {
-            curr_tour[curr_tour_id].property == EdgeProperty::Forward &&
-            curr_tour.last().unwrap().action == curr_tour[curr_tour_id].action
+            curr_tour[curr_tour_id].property == EdgeProperty::Forward
+                && curr_tour.last().unwrap().action == curr_tour[curr_tour_id].action
         };
         while is_direct_road(curr_tour_id, &self.curr_tour) {
             let action = self.curr_tour[curr_tour_id].action.clone();
@@ -382,7 +395,7 @@ impl Tree {
     // get the path from the root
     fn get_path(&self, best_leaf_id: usize, turn: usize) -> Vec<Action> {
         // eprintln!("curr_tour.len() = {}", self.curr_tour.capacity());
-        
+
         let mut ret = self.direct_road.clone();
         ret.reserve(turn);
         let mut leaf_id = 0;
@@ -396,7 +409,9 @@ impl Tree {
                     leaf_id += 1;
                 }
                 EdgeProperty::Forward => ret.push(edge.action.clone()),
-                EdgeProperty::Backward => { ret.pop(); },
+                EdgeProperty::Backward => {
+                    ret.pop();
+                }
             }
         }
 
@@ -404,7 +419,7 @@ impl Tree {
     }
 }
 
-pub fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
+fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
     let mut tree = Tree::new(state, config);
     let mut selector = Selector::new(config.beam_width);
 

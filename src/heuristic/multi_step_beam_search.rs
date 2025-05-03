@@ -6,7 +6,7 @@ type NodeIndex = u32;
 // beam search setting
 // capacity = 0 is OK.
 #[derive(Debug, Clone)]
-pub struct Config {
+struct Config {
     max_turn: usize,
     beam_width: usize,
     nodes_capacity: usize,
@@ -15,7 +15,7 @@ pub struct Config {
 // data for a state transition
 // Try to minimize memory usage.
 #[derive(Debug, Clone, Default)]
-pub struct Action {
+struct Action {
     // TODO
 }
 
@@ -69,7 +69,8 @@ impl SegmentTree {
         self.size = n.next_power_of_two();
         self.log = self.size.trailing_zeros() as usize;
         self.d.clear();
-        self.d.resize(2 * self.size, (Cost::MIN, CandidateIndex::MAX));
+        self.d
+            .resize(2 * self.size, (Cost::MIN, CandidateIndex::MAX));
     }
 
     fn build(&mut self, candidates: &Vec<Candidate>) {
@@ -254,13 +255,13 @@ impl MultiSelectors {
 }
 
 #[derive(Debug, Clone)]
-pub struct State {
+struct State {
     // TODO
 }
 
 // data updated in depth first search
 impl State {
-    pub fn new() -> Self {
+    fn new() -> Self {
         todo!();
     }
 
@@ -274,7 +275,14 @@ impl State {
     // - evaluator: current evaluator
     // - hash: current hash
     // - parent: current node ID (parent node ID for next state)
-    fn expand(&mut self, evaluator: &Evaluator, mut hash: Hash, parent: NodeIndex, selector: &mut MultiSelectors) {
+    fn expand(
+        &mut self,
+        action: &Action,
+        evaluator: &Evaluator,
+        mut hash: Hash,
+        parent: NodeIndex,
+        selector: &mut MultiSelectors,
+    ) {
         todo!();
     }
 
@@ -288,13 +296,13 @@ impl State {
 }
 
 #[derive(Debug, Clone)]
-pub struct ObjectPool<T> {
+struct ObjectPool<T> {
     data: Vec<T>,
     garbage: Vec<usize>,
 }
 
 impl<T: Default> ObjectPool<T> {
-    pub fn with_capacity(capacity: usize) -> ObjectPool<T> {
+    fn with_capacity(capacity: usize) -> ObjectPool<T> {
         ObjectPool {
             data: Vec::with_capacity(capacity),
             garbage: Vec::new(),
@@ -302,7 +310,7 @@ impl<T: Default> ObjectPool<T> {
     }
 
     // push `item`, then return the index
-    pub fn push(&mut self, item: T) -> usize {
+    fn push(&mut self, item: T) -> usize {
         if let Some(i) = self.garbage.pop() {
             self.data[i] = item;
             i
@@ -312,7 +320,7 @@ impl<T: Default> ObjectPool<T> {
         }
     }
 
-    pub fn pull(&mut self) -> usize {
+    fn pull(&mut self) -> usize {
         if let Some(i) = self.garbage.pop() {
             i
         } else {
@@ -322,11 +330,11 @@ impl<T: Default> ObjectPool<T> {
     }
 
     // remove the item at position `index`
-    pub fn remove(&mut self, index: usize) {
+    fn remove(&mut self, index: usize) {
         self.garbage.push(index);
     }
 
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         self.data.clear();
         self.garbage.clear();
     }
@@ -402,7 +410,12 @@ impl Tree {
         let mut nodes = ObjectPool::with_capacity(config.nodes_capacity);
         let root = nodes.push(Node::root(action, evaluator, hash)) as NodeIndex;
         let remove_nodes = std::collections::VecDeque::new();
-        Self { state, nodes, root, remove_nodes }
+        Self {
+            state,
+            nodes,
+            root,
+            remove_nodes,
+        }
     }
 
     // add candidates while dfs
@@ -422,6 +435,7 @@ impl Tree {
 
             multi_selectors.reset_step_max();
             self.state.expand(
+                &self.nodes[v as usize].action,
                 &self.nodes[v as usize].evaluator,
                 self.nodes[v as usize].hash,
                 v,
@@ -567,7 +581,7 @@ impl Tree {
     }
 }
 
-pub fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
+fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
     let mut tree = Tree::new(state, config);
     let mut multi_selectors = MultiSelectors::new(config.beam_width);
 
