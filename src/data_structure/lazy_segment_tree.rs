@@ -1,3 +1,43 @@
+// const MOD: i64 = 998244353;
+
+// struct SumMonoid;
+
+// impl Monoid for SumMonoid {
+//     type S = (i64, i64);
+
+//     fn e() -> Self::S {
+//         (0, 0)
+//     }
+
+//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
+//         let mut s = a.0 + b.0;
+//         if s >= MOD {
+//             s -= MOD;
+//         }
+//         (s, a.1 + b.1)
+//     }
+// }
+
+// struct AffineMapMonoid;
+
+// impl MapMonoid for AffineMapMonoid {
+//     type M = SumMonoid;
+//     type F = (i64, i64);
+
+//     fn mapping(f: &Self::F, x: &<Self::M as Monoid>::S) -> <Self::M as Monoid>::S {
+//         ((f.0 * x.0 + f.1 * x.1) % MOD, x.1)
+//     }
+
+//     fn composition(f: &Self::F, g: &Self::F) -> Self::F {
+//         (f.0 * g.0 % MOD, (f.0 * g.1 + f.1) % MOD)
+//     }
+
+//     fn id() -> Self::F {
+//         (1, 0)
+//     }
+// }
+
+
 pub trait Monoid {
     type S: Clone;
     fn e() -> Self::S;
@@ -250,42 +290,3 @@ impl <T: MapMonoid> LazySegmentTree<T> {
         self.lz[k] = T::id();
     }
 }
-
-// const MOD: i64 = 998244353;
-
-// struct SumMonoid;
-
-// impl Monoid for SumMonoid {
-//     type S = (i64, i64);
-
-//     fn e() -> Self::S {
-//         (0, 0)
-//     }
-
-//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
-//         let mut s = a.0 + b.0;
-//         if s >= MOD {
-//             s -= MOD;
-//         }
-//         (s, a.1 + b.1)
-//     }
-// }
-
-// struct AffineMapMonoid;
-
-// impl MapMonoid for AffineMapMonoid {
-//     type M = SumMonoid;
-//     type F = (i64, i64);
-
-//     fn mapping(f: &Self::F, x: &<Self::M as Monoid>::S) -> <Self::M as Monoid>::S {
-//         ((f.0 * x.0 + f.1 * x.1) % MOD, x.1)
-//     }
-
-//     fn composition(f: &Self::F, g: &Self::F) -> Self::F {
-//         (f.0 * g.0 % MOD, (f.0 * g.1 + f.1) % MOD)
-//     }
-
-//     fn id() -> Self::F {
-//         (1, 0)
-//     }
-// }

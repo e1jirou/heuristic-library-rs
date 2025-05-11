@@ -3,6 +3,7 @@ pub mod compress;
 pub mod disjoint_set_union;
 pub mod dynamic_fenwick_tree_2d;
 pub mod dynamic_fenwick_tree;
+pub mod dynamic_segment_tree;
 pub mod erasable_priority_queue;
 pub mod fenwick_tree_2d;
 pub mod fenwick_tree;

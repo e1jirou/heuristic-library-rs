@@ -1,3 +1,18 @@
+// struct MinMonoid;
+
+// impl Monoid for MinMonoid {
+//     type S = i32;
+
+//     fn e() -> Self::S {
+//         Self::S::MAX
+//     }
+
+//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
+//         *a.min(b)
+//     }
+// }
+
+
 pub trait Monoid {
     type S: Clone;
     fn e() -> Self::S;
@@ -36,10 +51,10 @@ impl <M: Monoid> SegmentTree<M> {
         ret
     }
 
-    pub fn set(&mut self, mut p: usize, x: &M::S) {
+    pub fn set(&mut self, mut p: usize, x: M::S) {
         debug_assert!(p < self.n);
         p += self.size;
-        self.d[p] = x.clone();
+        self.d[p] = x;
         for i in 1..=self.log {
             self.update(p >> i);
         }
@@ -144,17 +159,3 @@ impl <M: Monoid> SegmentTree<M> {
         self.d[k] = M::op(&self.d[2 * k], &self.d[2 * k + 1]);
     }
 }
-
-// struct MinMonoid;
-
-// impl Monoid for MinMonoid {
-//     type S = i32;
-
-//     fn e() -> Self::S {
-//         Self::S::MAX
-//     }
-
-//     fn op(a: &Self::S, b: &Self::S) -> Self::S {
-//         *a.min(b)
-//     }
-// }
