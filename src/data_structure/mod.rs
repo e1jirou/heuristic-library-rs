@@ -11,6 +11,7 @@ pub mod index_set;
 pub mod interval_heap;
 pub mod lazy_segment_tree;
 pub mod map_heap;
+pub mod mo;
 pub mod object_pool;
 pub mod radix_heap;
 pub mod segment_tree;
