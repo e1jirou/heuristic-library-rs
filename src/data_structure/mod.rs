@@ -14,6 +14,7 @@ pub mod map_heap;
 pub mod mo;
 pub mod object_pool;
 pub mod radix_heap;
+pub mod retroactive_priority_queue;
 pub mod segment_tree;
 pub mod sliding_window_aggregation;
 pub mod sparse_table;
