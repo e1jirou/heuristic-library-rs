@@ -6,6 +6,7 @@ struct Node<T: Clone> {
     dmin: T,
 }
 
+#[derive(Debug, Clone)]
 pub struct ReturnType<T> {
     pub insert: Vec<T>,
     pub erase: Vec<T>,
