@@ -1,9 +1,9 @@
 #[derive(Debug, Clone)]
 struct Node<T: Clone> {
     ssum: i32, // subtree sum of +1 (push) or -1 (pop) or 0 (no-op)
-    smin: i32, // cumulative minimum of ssum
-    qmax: T,
-    dmin: T,
+    smin: i32, // minimum of prefix sum of +1 (push) or -1 (pop) or 0 (no-op)
+    qmax: T,   // maximum value in Q_now
+    dmin: T,   // minimum value not in Q_now
 }
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
         debug_assert!(i < self.n);
         debug_assert!(self.tree[0].qmax < x && x < self.tree[0].dmin);
         let mut ret = self.set_no_op(i);
-        i += self.m;
+        i += self.m + 1;
         self.tree[i].dmin = x;
         self.update_d(i);
         self.incremental_update(i, &mut ret);
@@ -50,7 +50,7 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
     pub fn set_pop(&mut self, mut i: usize) -> ReturnType<T> {
         debug_assert!(i < self.n);
         let mut ret = self.set_no_op(i);
-        i += self.m;
+        i += self.m + 1;
         self.decremental_update(i, &mut ret);
         ret
     }
@@ -61,7 +61,7 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
             insert: Vec::new(),
             erase: Vec::new(),
         };
-        i += self.m;
+        i += self.m + 1;
         if self.tree[i].ssum == -1 {
             self.incremental_update(i, &mut ret);
         } else if self.tree[0].qmax < self.tree[i].qmax {
@@ -80,10 +80,10 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
         // bottom up
         while i >= 2 {
             i >>= 1;
-            self.tree[i].ssum = self.tree[2 * i].ssum + self.tree[2 * i + 1].ssum;
-            self.tree[i].smin = self.tree[2 * i]
+            self.tree[i].ssum = self.tree[i << 1].ssum + self.tree[i << 1 | 1].ssum;
+            self.tree[i].smin = self.tree[i << 1]
                 .smin
-                .min(self.tree[2 * i].ssum + self.tree[2 * i + 1].smin);
+                .min(self.tree[i << 1].ssum + self.tree[i << 1 | 1].smin);
         }
     }
 
@@ -91,7 +91,7 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
         // bottom up
         while i >= 2 {
             i >>= 1;
-            self.tree[i].qmax = self.tree[2 * i].qmax.max(self.tree[2 * i + 1].qmax);
+            self.tree[i].qmax = self.tree[i << 1].qmax.max(self.tree[i << 1 | 1].qmax);
         }
     }
 
@@ -99,7 +99,7 @@ impl<T: Copy + Ord> PartiallyRetroactivePriorityQueue<T> {
         // bottom up
         while i >= 2 {
             i >>= 1;
-            self.tree[i].dmin = self.tree[2 * i].dmin.min(self.tree[2 * i + 1].dmin);
+            self.tree[i].dmin = self.tree[i << 1].dmin.min(self.tree[i << 1 | 1].dmin);
         }
     }
 
