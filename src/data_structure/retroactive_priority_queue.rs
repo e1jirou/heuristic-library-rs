@@ -201,7 +201,7 @@ mod tests {
     use itertools::Itertools;
     use rand::prelude::*;
     use rand_pcg::Pcg64Mcg;
-    use std::{collections::{BinaryHeap, HashMap}};
+    use std::collections::{BinaryHeap, HashMap};
 
     #[derive(Debug, Clone, Copy)]
     enum Op {
@@ -212,17 +212,19 @@ mod tests {
 
     #[test]
     fn test_retroactive_priority_queue_returns_multiple() {
-        const NUM_TRIALS: usize = 100;
+        const NUM_TRIALS: usize = 1000;
         const N: usize = 100;
+        const Q: usize = 10 * N;
         const XMAX: i32 = 1000;
 
         for trial in 0..NUM_TRIALS {
             let mut rng = Pcg64Mcg::seed_from_u64(trial as u64);
-            let mut prpq = PartiallyRetroactivePriorityQueue::new(N, i32::MIN, i32::MAX);
-            let mut ops = vec![Op::NoOp; N];
+            let n = rng.gen_range(1..=N);
+            let mut prpq = PartiallyRetroactivePriorityQueue::new(n, i32::MIN, i32::MAX);
+            let mut ops = vec![Op::NoOp; n];
             let mut hm = HashMap::new();
-            for _ in 0..N {
-                let i = rng.gen_range(0..N);
+            for _ in 0..Q {
+                let i = rng.gen_range(0..n);
                 let op_type = rng.gen_range(0..3);
                 let diff = match op_type {
                     0 => {
@@ -244,33 +246,41 @@ mod tests {
                     *hm.get_mut(&x).unwrap() += 1;
                 }
                 for &x in &diff.erase {
-                    hm.entry(x).and_modify(|e| *e -= 1);
-                    if hm[&x] == 0 {
+                    if !hm.contains_key(&x) {
+                        panic!("Tried to erase a value not in the queue: {}", x);
+                    }
+                    let count = hm.get_mut(&x).unwrap();
+                    if *count <= 0 {
+                        panic!("Tried to erase a value with count <= 0: {}", x);
+                    }
+                    *count -= 1;
+                    if *count == 0 {
                         hm.remove(&x);
                     }
                 }
-            }
-            let mut heap = BinaryHeap::new();
-            for i in 0..N {
-                match ops[i] {
-                    Op::Push(x) => {
-                        heap.push(x);
+                // naive check
+                let mut heap = BinaryHeap::new();
+                for i in 0..n {
+                    match ops[i] {
+                        Op::Push(x) => {
+                            heap.push(x);
+                        }
+                        Op::Pop => {
+                            heap.pop();
+                        }
+                        Op::NoOp => {}
                     }
-                    Op::Pop => {
-                        heap.pop();
+                }
+                let expected = heap.into_iter().sorted().collect::<Vec<_>>();
+                let mut actual = vec![];
+                for (&x, &count) in &hm {
+                    for _ in 0..count {
+                        actual.push(x);
                     }
-                    Op::NoOp => {}
                 }
+                actual.sort();
+                assert_eq!(expected, actual, "Trial {} failed", trial);
             }
-            let expected = heap.into_iter().sorted().collect::<Vec<_>>();
-            let mut actual = vec![];
-            for (&x, &count) in &hm {
-                for _ in 0..count {
-                    actual.push(x);
-                }
-            }
-            actual.sort();
-            assert_eq!(expected, actual, "Trial {} failed", trial);
         }
     }
 }
