@@ -365,6 +365,7 @@ struct Node {
     left: NodeIndex,
     right: NodeIndex,
     active: bool,
+    remove_check_turn: TurnIndex,
 }
 
 impl Node {
@@ -378,6 +379,7 @@ impl Node {
             left: !0,
             right: !0,
             active: true,
+            remove_check_turn: 0,
         }
     }
 
@@ -391,6 +393,7 @@ impl Node {
             left: !0,
             right,
             active: true,
+            remove_check_turn: 0,
         }
     }
 }
@@ -419,9 +422,9 @@ impl Tree {
     }
 
     // add candidates while dfs
-    fn dfs(&mut self, multi_selectors: &mut MultiSelectors) {
-        self.remove_useless_nodes();
-        self.update_root();
+    fn dfs(&mut self, multi_selectors: &mut MultiSelectors, turn: TurnIndex) {
+        self.remove_useless_nodes(turn);
+        self.update_root(turn);
 
         let mut v = self.root;
 
@@ -445,6 +448,7 @@ impl Tree {
                 self.remove_nodes.push_back(Vec::new());
             }
             self.remove_nodes[multi_selectors.step_max - 1].push(v);
+            self.nodes[v as usize].remove_check_turn = turn + multi_selectors.step_max as TurnIndex;
 
             v = self.move_to_ancestor(v);
             if v == self.root {
@@ -530,9 +534,12 @@ impl Tree {
     }
 
     // do not round trip the direct road
-    fn update_root(&mut self) {
+    fn update_root(&mut self, turn: TurnIndex) {
         let mut child = self.nodes[self.root as usize].child;
-        while child != !0 && self.nodes[child as usize].right == !0 {
+        while child != !0
+            && self.nodes[child as usize].right == !0
+            && self.nodes[self.root as usize].remove_check_turn <= turn
+        {
             self.root = child;
             self.state.move_forward(&self.nodes[child as usize].action);
             child = self.nodes[child as usize].child;
@@ -540,14 +547,14 @@ impl Tree {
     }
 
     // remove useless nodes
-    fn remove_useless_nodes(&mut self) {
+    fn remove_useless_nodes(&mut self, turn: TurnIndex) {
         if self.remove_nodes.is_empty() {
             return;
         }
         let mut remove_nodes_front = self.remove_nodes.pop_front().unwrap();
         for &v in &remove_nodes_front {
             if self.nodes[v as usize].child == !0 {
-                self.remove_leaf(v);
+                self.remove_leaf(v, turn);
             }
         }
         remove_nodes_front.clear();
@@ -555,8 +562,12 @@ impl Tree {
     }
 
     // remove the node `v` and its ancestors while they have no child
-    fn remove_leaf(&mut self, mut v: NodeIndex) {
+    fn remove_leaf(&mut self, mut v: NodeIndex, turn: TurnIndex) {
         loop {
+            if self.nodes[v as usize].remove_check_turn > turn {
+                // v can have a child in the future
+                return;
+            }
             let left = self.nodes[v as usize].left;
             let right = self.nodes[v as usize].right;
             if left == !0 {
@@ -587,7 +598,7 @@ fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
 
     for turn in 0..config.max_turn {
         // add candidates to selector
-        tree.dfs(&mut multi_selectors);
+        tree.dfs(&mut multi_selectors, turn as TurnIndex);
 
         let selector = multi_selectors.pop_front();
         if let Some(candidate) = &selector.finished_candidate {
