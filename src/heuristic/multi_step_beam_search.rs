@@ -2,6 +2,7 @@ type Cost = i32;
 type Hash = u64;
 type CandidateIndex = u32;
 type NodeIndex = u32;
+type TurnIndex = u32;
 
 // beam search setting
 // capacity = 0 is OK.
