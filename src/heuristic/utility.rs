@@ -73,6 +73,21 @@ pub fn get_time_sec() -> f64 {
     }
 }
 
+/// size: bytes
+/// align: bytes
+/// return empty vector
+pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
+    debug_assert!(align.is_power_of_two());
+    debug_assert_eq!(size % std::mem::size_of::<T>(), 0);
+
+    let capacity = size / std::mem::size_of::<T>();
+    unsafe {
+        let layout = std::alloc::Layout::from_size_align_unchecked(size, align);
+        let ptr = std::alloc::alloc(layout);
+        Vec::from_raw_parts(ptr as *mut T, 0, capacity)
+    }
+}
+
 #[inline(always)]
 pub fn encode2(a: usize, b: usize, bw: usize) -> usize {
     debug_assert!(b < (1 << bw));
