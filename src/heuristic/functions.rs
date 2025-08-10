@@ -27,6 +27,20 @@ pub fn smooth_maximum_unit<T: num_traits::Float>(a: T, b: T, eps: T) -> T {
 }
 
 pub fn log2_fast(x: f32) -> f32 {
-    let y = x.to_bits().wrapping_sub(127 << 23);
+    let y = (x.to_bits() as i32) - (127 << 23);
     y as f32 / (1 << 23) as f32
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_log2_fast() {
+        let mut x = 1e-18;
+        let r = 1.1;
+        while x < 1.0 {
+            dbg!(x, log2_fast(x), x.log2());
+            x *= r;
+        }
+    }
 }
