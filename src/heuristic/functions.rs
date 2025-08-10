@@ -25,3 +25,8 @@ pub fn smooth_maximum_unit<T: num_traits::Float>(a: T, b: T, eps: T) -> T {
     let d = a - b;
     (a + b + (d * d + eps).sqrt()) / (T::one() + T::one())
 }
+
+pub fn log2_fast(x: f32) -> f32 {
+    let y = x.to_bits().wrapping_sub(127 << 23);
+    y as f32 / (1 << 23) as f32
+}
