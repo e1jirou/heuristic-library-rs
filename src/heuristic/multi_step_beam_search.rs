@@ -294,11 +294,11 @@ impl State {
         selector: &mut MultiSelectors,
     ) {
         for step in 1..=5 {
-            let cost = self.rng.gen_range(1..100) * step;
+            let cost = self.rng.random_range(1..100) * step;
             let nevaluator = Evaluator {
                 cost: evaluator.cost + cost,
             };
-            let nhash = hash ^ self.rng.gen::<Hash>();
+            let nhash = hash ^ self.rng.random::<Hash>();
             let candidate = Candidate {
                 action: Action {
                     step: step as usize,

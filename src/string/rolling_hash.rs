@@ -1,4 +1,4 @@
-use rand::{Rng, SeedableRng};
+use rand::{rng, Rng, SeedableRng};
 
 pub struct RollingHash {
     n: usize,
@@ -12,8 +12,9 @@ impl RollingHash {
     }
 
     pub fn generate_base() -> i64 {
-        let mut rng = rand_pcg::Pcg64Mcg::from_entropy();
-        rng.gen_range(1..Self::get_mod())
+        let mut master = rng();
+        let mut rng = rand_pcg::Pcg64Mcg::from_rng(&mut master);
+        rng.random_range(1..Self::get_mod())
     }
 
     pub fn from_vec<T: num_traits::NumCast>(s: &[T], base: i64) -> Self {

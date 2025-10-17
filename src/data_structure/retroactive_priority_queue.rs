@@ -219,16 +219,16 @@ mod tests {
 
         for trial in 0..NUM_TRIALS {
             let mut rng = Pcg64Mcg::seed_from_u64(trial as u64);
-            let n = rng.gen_range(1..=N);
+            let n = rng.random_range(1..=N);
             let mut prpq = PartiallyRetroactivePriorityQueue::new(n, i32::MIN, i32::MAX);
             let mut ops = vec![Op::NoOp; n];
             let mut hm = HashMap::new();
             for _ in 0..Q {
-                let i = rng.gen_range(0..n);
-                let op_type = rng.gen_range(0..3);
+                let i = rng.random_range(0..n);
+                let op_type = rng.random_range(0..3);
                 let diff = match op_type {
                     0 => {
-                        let x = rng.gen_range(0..XMAX);
+                        let x = rng.random_range(0..XMAX);
                         ops[i] = Op::Push(x);
                         prpq.set_push(i, x)
                     }

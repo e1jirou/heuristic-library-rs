@@ -32,6 +32,7 @@ pub fn log2_fast(x: f32) -> f32 {
 }
 
 mod tests {
+    #[allow(unused)]
     use super::*;
 
     #[test]
