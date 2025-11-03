@@ -1,4 +1,5 @@
 use crate::math::mod_int::ModInt;
+use num_traits::{Zero, One};
 
 pub struct Factorials<const MOD: u32> {
     n: usize,

@@ -1,3 +1,5 @@
+use num_traits::{Zero, One};
+
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
 pub struct ModInt<const MOD: u32> {
@@ -21,14 +23,6 @@ impl<const MOD: u32> ModInt<MOD> {
         ModInt {
             v: (v % (MOD as usize)) as u32,
         }
-    }
-
-    pub fn zero() -> Self {
-        Self::raw(0)
-    }
-
-    pub fn one() -> Self {
-        Self::raw(1)
     }
 
     pub fn raw(v: u32) -> Self {
@@ -143,6 +137,26 @@ impl<const MOD: u32> std::ops::Div for ModInt<MOD> {
     fn div(mut self, rhs: Self) -> Self::Output {
         self /= rhs;
         self
+    }
+}
+
+impl<const MOD: u32> num_traits::Zero for ModInt<MOD> {
+    fn zero() -> Self {
+        ModInt::raw(0)
+    }
+
+    fn is_zero(&self) -> bool {
+        self.v == 0
+    }
+}
+
+impl<const MOD: u32> num_traits::One for ModInt<MOD> {
+    fn one() -> Self {
+        ModInt::raw(1)
+    }
+
+    fn is_one(&self) -> bool {
+        self.v == 1
     }
 }
 

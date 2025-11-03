@@ -1,5 +1,6 @@
 use super::convolution::convolution;
 use super::mod_int::ModInt;
+use num_traits::{Zero, One};
 
 #[derive(Debug, Clone)]
 pub struct FormalPowerSeries<const MOD: u32> {
@@ -11,11 +12,11 @@ impl<const MOD: u32> FormalPowerSeries<MOD> {
         FormalPowerSeries { f }
     }
 
-    pub fn pow(&self, mut k: u64, deg: usize) -> Self {
+    pub fn pow(&self, mut exp: u64, deg: usize) -> Self {
         let mut res = FormalPowerSeries::new(vec![ModInt::one(); 1]);
         let mut base = self.clone();
-        while k > 0 {
-            if k & 1 == 1 {
+        while exp > 0 {
+            if exp & 1 == 1 {
                 res *= base.clone();
                 if res.f.len() > deg {
                     res.f.truncate(deg + 1);
@@ -25,7 +26,7 @@ impl<const MOD: u32> FormalPowerSeries<MOD> {
             if base.f.len() > deg {
                 base.f.truncate(deg + 1);
             }
-            k >>= 1;
+            exp >>= 1;
         }
         res
     }

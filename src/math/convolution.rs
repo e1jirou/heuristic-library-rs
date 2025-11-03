@@ -1,4 +1,5 @@
 use super::mod_int::{ModInt, inv_gcd, primitive_root_const, safe_mod};
+use num_traits::{Zero, One};
 
 const MAX_RANK2: usize = 31;
 
