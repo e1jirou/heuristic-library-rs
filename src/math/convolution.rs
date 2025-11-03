@@ -1,5 +1,5 @@
-use super::mod_int::{ModInt, inv_gcd, primitive_root_const, safe_mod};
-use num_traits::{Zero, One};
+use super::mod_int::{inv_gcd, primitive_root_const, safe_mod, ModInt};
+use num_traits::{One, Zero};
 
 const MAX_RANK2: usize = 31;
 
@@ -59,7 +59,7 @@ fn butterfly<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) {
     let n = a.len();
     let h = n.trailing_zeros() as i32;
 
-    let mut len = 0;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
+    let mut len = 0; // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
     while len < h {
         if h - len == 1 {
             let p = 1 << (h - len - 1);
@@ -92,7 +92,8 @@ fn butterfly<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) {
                     let a1 = a[i + offset + p].val() as u64 * rot.val() as u64;
                     let a2 = a[i + offset + 2 * p].val() as u64 * rot2.val() as u64;
                     let a3 = a[i + offset + 3 * p].val() as u64 * rot3.val() as u64;
-                    let a1na3imag = ModInt::<MOD>::from_u64(a1 + mod2 - a3).val() as u64 * imag.val() as u64;
+                    let a1na3imag =
+                        ModInt::<MOD>::from_u64(a1 + mod2 - a3).val() as u64 * imag.val() as u64;
                     let na2 = mod2 - a2;
                     a[i + offset] = ModInt::from_u64(a0 + a2 + a1 + a3);
                     a[i + offset + p] = ModInt::from_u64(a0 + a2 + (2 * mod2 - (a1 + a3)));
@@ -112,7 +113,7 @@ fn butterfly_inv<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) 
     let n = a.len();
     let h = n.trailing_zeros() as i32;
 
-    let mut len = h;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
+    let mut len = h; // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
     while len != 0 {
         if len == 1 {
             let p = 1 << (h - len);
@@ -123,7 +124,9 @@ fn butterfly_inv<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) 
                     let l = a[i + offset];
                     let r = a[i + offset + p];
                     a[i + offset] = l + r;
-                    a[i + offset + p] = ModInt::from_u64((MOD as i64 + l.val() as i64 - r.val() as i64) as u64 * irot.val() as u64);
+                    a[i + offset + p] = ModInt::from_u64(
+                        (MOD as i64 + l.val() as i64 - r.val() as i64) as u64 * irot.val() as u64,
+                    );
                 }
                 if s + 1 != (1 << (len - 1)) {
                     irot *= info.irate2[(!(s as u32)).trailing_zeros() as usize];
@@ -144,11 +147,18 @@ fn butterfly_inv<const MOD: u32>(a: &mut Vec<ModInt<MOD>>, info: &FftInfo<MOD>) 
                     let a1 = a[i + offset + p].val() as u64;
                     let a2 = a[i + offset + 2 * p].val() as u64;
                     let a3 = a[i + offset + 3 * p].val() as u64;
-                    let a2na3iimag = ModInt::<MOD>::from_u64((MOD as u64 + a2 - a3) * iimag.val() as u64).val() as u64;
+                    let a2na3iimag =
+                        ModInt::<MOD>::from_u64((MOD as u64 + a2 - a3) * iimag.val() as u64).val()
+                            as u64;
                     a[i + offset] = ModInt::from_u64(a0 + a1 + a2 + a3);
-                    a[i + offset + p] = ModInt::from_u64((a0 + (MOD as u64 - a1) + a2na3iimag) * irot.val() as u64);
-                    a[i + offset + 2 * p] = ModInt::from_u64((a0 + a1 + (MOD as u64 - a2) + (MOD as u64 - a3)) * irot2.val() as u64);
-                    a[i + offset + 3 * p] = ModInt::from_u64((a0 + (MOD as u64 - a1) + (MOD as u64 - a2na3iimag)) * irot3.val() as u64);
+                    a[i + offset + p] =
+                        ModInt::from_u64((a0 + (MOD as u64 - a1) + a2na3iimag) * irot.val() as u64);
+                    a[i + offset + 2 * p] = ModInt::from_u64(
+                        (a0 + a1 + (MOD as u64 - a2) + (MOD as u64 - a3)) * irot2.val() as u64,
+                    );
+                    a[i + offset + 3 * p] = ModInt::from_u64(
+                        (a0 + (MOD as u64 - a1) + (MOD as u64 - a2na3iimag)) * irot3.val() as u64,
+                    );
                 }
                 if s + 1 != (1 << (len - 2)) {
                     irot *= info.irate3[(!(s as u32)).trailing_zeros() as usize];
@@ -179,7 +189,34 @@ fn convolution_naive<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Ve
     ans
 }
 
-fn convolution_fft<const MOD: u32>(mut a: Vec<ModInt<MOD>>, mut b: Vec<ModInt<MOD>>) -> Vec<ModInt<MOD>> {
+fn convolution_sparse<const MOD: u32>(a: &[ModInt<MOD>], b: &[ModInt<MOD>]) -> Vec<ModInt<MOD>> {
+    let n = a.len();
+    let m = b.len();
+    let ac = a
+        .iter()
+        .cloned()
+        .enumerate()
+        .filter(|&(_, x)| x != ModInt::zero())
+        .collect::<Vec<_>>();
+    let bc = b
+        .iter()
+        .cloned()
+        .enumerate()
+        .filter(|&(_, x)| x != ModInt::zero())
+        .collect::<Vec<_>>();
+    let mut ans = vec![ModInt::zero(); n + m - 1];
+    for &(i, ai) in &ac {
+        for &(j, bj) in &bc {
+            ans[i + j] += ai * bj;
+        }
+    }
+    ans
+}
+
+fn convolution_fft<const MOD: u32>(
+    mut a: Vec<ModInt<MOD>>,
+    mut b: Vec<ModInt<MOD>>,
+) -> Vec<ModInt<MOD>> {
     let n = a.len();
     let m = b.len();
     let z = (n + m - 1).next_power_of_two();
@@ -212,7 +249,12 @@ pub fn convolution<const MOD: u32>(a: Vec<ModInt<MOD>>, b: Vec<ModInt<MOD>>) -> 
     debug_assert_eq!((MOD as usize - 1) % z, 0);
 
     if n.min(m) <= 60 {
-        convolution_naive(&a, &b)
+        return convolution_naive(&a, &b)
+    }
+    let a_cnt = a.iter().cloned().filter(|&x| x != ModInt::zero()).count();
+    let b_cnt = b.iter().cloned().filter(|&x| x != ModInt::zero()).count();
+    if a_cnt * b_cnt <= 20 * (n + m) {
+        convolution_sparse(&a, &b)
     } else {
         convolution_fft(a, b)
     }
@@ -264,9 +306,21 @@ pub fn convolution_i64(a: &[i64], b: &[i64]) -> Vec<i64> {
 
     const MAX_AB_BIT: usize = 24;
 
-    debug_assert_eq!(MOD1 % (1 << MAX_AB_BIT), 1, "MOD1 isn't enough to support an array length of 2^24.");
-    debug_assert_eq!(MOD2 % (1 << MAX_AB_BIT), 1, "MOD2 isn't enough to support an array length of 2^24.");
-    debug_assert_eq!(MOD3 % (1 << MAX_AB_BIT), 1, "MOD3 isn't enough to support an array length of 2^24.");
+    debug_assert_eq!(
+        MOD1 % (1 << MAX_AB_BIT),
+        1,
+        "MOD1 isn't enough to support an array length of 2^24."
+    );
+    debug_assert_eq!(
+        MOD2 % (1 << MAX_AB_BIT),
+        1,
+        "MOD2 isn't enough to support an array length of 2^24."
+    );
+    debug_assert_eq!(
+        MOD3 % (1 << MAX_AB_BIT),
+        1,
+        "MOD3 isn't enough to support an array length of 2^24."
+    );
     debug_assert!(n + m - 1 <= (1 << MAX_AB_BIT));
 
     let c1 = convolution_mod_i64::<754974721>(a, b);
