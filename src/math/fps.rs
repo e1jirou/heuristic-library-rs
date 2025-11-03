@@ -12,20 +12,22 @@ impl<const MOD: u32> FormalPowerSeries<MOD> {
         FormalPowerSeries { f }
     }
 
+    pub fn truncate(&mut self, deg: usize) {
+        if self.f.len() > deg {
+            self.f.truncate(deg + 1);
+        }
+    }
+
     pub fn pow(&self, mut exp: u64, deg: usize) -> Self {
         let mut res = FormalPowerSeries::new(vec![ModInt::one(); 1]);
         let mut base = self.clone();
         while exp > 0 {
             if exp & 1 == 1 {
                 res *= base.clone();
-                if res.f.len() > deg {
-                    res.f.truncate(deg + 1);
-                }
+                res.truncate(deg);
             }
             base *= base.clone();
-            if base.f.len() > deg {
-                base.f.truncate(deg + 1);
-            }
+            base.truncate(deg);
             exp >>= 1;
         }
         res
@@ -123,9 +125,7 @@ pub fn total_product<const MOD: u32>(
         let e1 = heap.pop().unwrap();
         let e2 = heap.pop().unwrap();
         let mut merged = e1.fps * e2.fps;
-        if merged.f.len() > deg {
-            merged.f.truncate(deg + 1);
-        }
+        merged.truncate(deg);
         heap.push(Entry {
             size: merged.f.len(),
             fps: merged,
