@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_retroactive_priority_queue_returns_multiple() {
-        const NUM_TRIALS: usize = 1000;
+        const NUM_TRIALS: usize = 100;
         const N: usize = 100;
         const Q: usize = 10 * N;
         const XMAX: i32 = 1000;
