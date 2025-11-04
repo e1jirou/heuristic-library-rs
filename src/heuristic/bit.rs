@@ -16,6 +16,7 @@ pub fn bit_width<T: num_traits::PrimInt>(x: T) -> usize {
     8 * std::mem::size_of::<T>() - x.leading_zeros() as usize
 }
 
+#[inline(always)]
 pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Option<u32> {
     if *x == T::zero() {
         return None;

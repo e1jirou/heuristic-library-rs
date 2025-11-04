@@ -22,6 +22,7 @@ pub struct AnnealingScheduler {
     log2_random: Vec<f64>,
     trials: usize,
     acceptances: usize,
+    progress: f64,
 }
 
 impl AnnealingScheduler {
@@ -55,6 +56,7 @@ impl AnnealingScheduler {
             log2_random,
             trials: 0,
             acceptances: 0,
+            progress: 0.0,
         }
     }
 
@@ -93,12 +95,12 @@ impl AnnealingScheduler {
             return;
         }
         self.time_counter = SA_TIME_COUNTS - 1;
-        let progress = (get_time_sec() - self.start_time_sec) / self.duration_sec;
+        self.progress = (get_time_sec() - self.start_time_sec) / self.duration_sec;
         self.temperature = match self.schedule_type {
             SchedulerType::Exp => {
-                self.t_first.powf(1.0 - progress) * self.t_last.powf(progress)
+                self.t_first.powf(1.0 - self.progress) * self.t_last.powf(self.progress)
             }
-            SchedulerType::Linear => self.t_first * (1.0 - progress) + self.t_last * progress,
+            SchedulerType::Linear => self.t_first * (1.0 - self.progress) + self.t_last * self.progress,
         }
     }
 

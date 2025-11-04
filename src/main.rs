@@ -14,6 +14,7 @@ fn main() {
     exit(0);
 }
 
+#[derive(Debug, Clone)]
 struct Input {
     // TODO
 }
