@@ -57,7 +57,7 @@ impl XorShift32 {
     }
 
     #[inline(always)]
-    pub fn shuffle(&mut self, v: &mut [usize]) {
+    pub fn shuffle<T>(&mut self, v: &mut [T]) {
         let n = v.len();
         for i in (1..n).rev() {
             let j = self.gen_range(0, i + 1);
@@ -66,7 +66,7 @@ impl XorShift32 {
     }
 
     #[inline(always)]
-    pub fn partial_shuffle(&mut self, v: &mut [usize], n: usize) {
+    pub fn partial_shuffle<T>(&mut self, v: &mut [T], n: usize) {
         let m = v.len();
         debug_assert!(n <= m);
         for i in 0..n {
