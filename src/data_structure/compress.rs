@@ -4,7 +4,7 @@ pub struct Compress<T> {
 
 impl<T: Clone + Copy + Ord> Compress<T> {
     pub fn new(mut data: Vec<T>) -> Self {
-        data.sort();
+        data.sort_unstable();
         data.dedup();
         Compress {
             data,
