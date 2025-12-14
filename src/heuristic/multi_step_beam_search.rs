@@ -1,6 +1,3 @@
-use rand::{Rng, SeedableRng};
-use rand_pcg::{Mcg128Xsl64, Pcg64, Pcg64Mcg};
-
 type Cost = i32;
 type Hash = u64;
 type CandidateIndex = u32;
@@ -20,21 +17,20 @@ struct Config {
 // Try to minimize memory usage.
 #[derive(Debug, Clone, Default)]
 struct Action {
-    step: usize,
-    cost: Cost,
+    // TODO
 }
 
 // data for evaluation
 // Try to minimize memory usage.
 #[derive(Debug, Clone, Default)]
 struct Evaluator {
-    cost: Cost,
+    // TODO
 }
 
 impl Evaluator {
     // the lower, the better
     fn evaluate(&self) -> Cost {
-        self.cost
+        todo!()
     }
 }
 
@@ -261,23 +257,18 @@ impl MultiSelectors {
 
 #[derive(Debug, Clone)]
 struct State {
-    rng: Mcg128Xsl64,
+    // TODO
 }
 
 // data updated in depth first search
 impl State {
     fn new(seed: u64) -> Self {
-        Self {
-            rng: Pcg64Mcg::seed_from_u64(seed),
-        }
+        todo!()
     }
 
     // return the initial value of Action, Evaluator and Hash
     fn get_initial_data(&self) -> (Action, Evaluator, Hash) {
-        let action = Action { step: 0, cost: 0 };
-        let evaluator = Evaluator { cost: 0 };
-        let hash = 0;
-        (action, evaluator, hash)
+        todo!()
     }
 
     // add candidates to selector
@@ -293,32 +284,15 @@ impl State {
         parent: NodeIndex,
         selector: &mut MultiSelectors,
     ) {
-        for step in 1..=5 {
-            let cost = self.rng.random_range(1..100) * step;
-            let nevaluator = Evaluator {
-                cost: evaluator.cost + cost,
-            };
-            let nhash = hash ^ self.rng.random::<Hash>();
-            let candidate = Candidate {
-                action: Action {
-                    step: step as usize,
-                    cost,
-                },
-                cost: nevaluator.evaluate(),
-                evaluator: nevaluator,
-                hash: nhash,
-                parent,
-            };
-            selector.push_candidate(candidate, false, step as usize);
-        }
+        todo!()
     }
 
     fn move_forward(&mut self, action: &Action) {
-        // nop
+        todo!()
     }
 
     fn move_backward(&mut self, action: &Action) {
-        // nop
+        todo!()
     }
 }
 
@@ -650,42 +624,4 @@ fn beam_search(config: &Config, state: State) -> Option<Vec<Action>> {
     }
 
     unreachable!();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_beam_search() {
-        const TRIALS: usize = 10;
-        const MAX_TURN: usize = 100;
-        for trial in 0..TRIALS {
-            let config = Config {
-                max_turn: MAX_TURN,
-                beam_width: 10,
-                nodes_capacity: 100,
-            };
-            let state = State::new(trial as u64);
-            let result = beam_search(&config, state).unwrap();
-            let mut turn = 0;
-            let mut cost = 0;
-            for action in &result {
-                turn += action.step;
-                cost += action.cost;
-            }
-            assert_eq!(
-                turn, MAX_TURN,
-                "Trial {}: Total steps do not match the max turn",
-                trial
-            );
-            println!(
-                "Trial {}: Found solution with total steps {}, actions {} and cost {}",
-                trial,
-                turn,
-                result.len(),
-                cost
-            );
-        }
-    }
 }
