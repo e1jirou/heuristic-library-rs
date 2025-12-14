@@ -1,17 +1,18 @@
 // Double-Ended Priority Queue
+#[derive(Debug, Clone)]
 pub struct IntervalHeap<T> {
     heap: Vec<T>,
 }
 
 impl<T: Ord> IntervalHeap<T> {
     pub fn new() -> Self {
-        IntervalHeap {
-            heap: Vec::new(),
+        Self {
+            heap: vec![],
         }
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        IntervalHeap {
+        Self {
             heap: Vec::with_capacity(capacity),
         }
     }
@@ -26,6 +27,10 @@ impl<T: Ord> IntervalHeap<T> {
 
     pub fn is_empty(&self) -> bool {
         self.heap.is_empty()
+    }
+
+    pub fn clear(&mut self) {
+        self.heap.clear();
     }
 
     pub fn push(&mut self, x: T) {
