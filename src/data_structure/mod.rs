@@ -1,5 +1,6 @@
 pub mod binary_trie;
 pub mod compress;
+pub mod counter;
 pub mod disjoint_set_union;
 pub mod dynamic_fenwick_tree_2d;
 pub mod dynamic_fenwick_tree;
