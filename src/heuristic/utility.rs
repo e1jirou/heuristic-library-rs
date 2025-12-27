@@ -73,18 +73,19 @@ pub fn get_time_sec() -> f64 {
     }
 }
 
-/// size: bytes
-/// align: bytes
-/// return empty vector
-pub fn aligned_alloc<T>(size: usize, align: usize) -> Vec<T> {
-    debug_assert!(align.is_power_of_two());
-    debug_assert_eq!(size % std::mem::size_of::<T>(), 0);
-
-    let capacity = size / std::mem::size_of::<T>();
+// NOTE: This is technically UB.
+// The allocation is 512-byte aligned, but deallocation happens with a smaller alignment.
+// We rely on the behavior of the system allocator and intentionally leak the memory
+// using `mem::forget`, since this is short-lived competitive programming code.
+pub fn aligned_alloc_512<T>(len: usize) -> Vec<T> {
+    debug_assert_eq!(512 % std::mem::size_of::<T>(), 0);
+    let size = len * std::mem::size_of::<T>();
+    let size_aligned = (size + 511) / 512 * 512;
+    let capacity = size_aligned / std::mem::size_of::<T>();
     unsafe {
-        let layout = std::alloc::Layout::from_size_align_unchecked(size, align);
+        let layout = std::alloc::Layout::from_size_align_unchecked(size_aligned, 512);
         let ptr = std::alloc::alloc(layout);
-        Vec::from_raw_parts(ptr as *mut T, 0, capacity)
+        Vec::from_raw_parts(ptr as *mut T, len, capacity)
     }
 }
 
