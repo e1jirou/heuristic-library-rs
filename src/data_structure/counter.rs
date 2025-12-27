@@ -1,4 +1,4 @@
-struct Counter<T> {
+pub struct Counter<T> {
     map: std::collections::HashMap<T, usize>,
 }
 
