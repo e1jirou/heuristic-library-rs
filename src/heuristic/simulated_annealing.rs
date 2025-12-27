@@ -100,7 +100,9 @@ impl AnnealingScheduler {
             SchedulerType::Exp => {
                 self.t_first.powf(1.0 - self.progress) * self.t_last.powf(self.progress)
             }
-            SchedulerType::Linear => self.t_first * (1.0 - self.progress) + self.t_last * self.progress,
+            SchedulerType::Linear => {
+                self.t_first * (1.0 - self.progress) + self.t_last * self.progress
+            }
         }
     }
 
