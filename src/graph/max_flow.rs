@@ -1,9 +1,9 @@
 #[allow(unused)]
 pub struct Edge<Cap> {
-    from: usize,
-    to: usize,
-    cap: Cap,
-    flow: Cap,
+    pub from: usize,
+    pub to: usize,
+    pub cap: Cap,
+    pub flow: Cap,
 }
 
 #[derive(Clone)]
@@ -24,7 +24,7 @@ pub struct MaxFlow<Cap> {
 
 impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
     pub fn new(n: usize) -> Self {
-        MaxFlow {
+        Self {
             n,
             pos: Vec::new(),
             g: vec![vec![]; n],
@@ -122,8 +122,7 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         self.level[s] = 0;
         self.que.clear();
         self.que.push_back(s);
-        while !self.que.is_empty() {
-            let v = self.que.pop_front().unwrap();
+        while let Some(v) = self.que.pop_front() {
             for e in &self.g[v] {
                 if e.cap == Cap::zero() || self.level[e.to] >= 0 {
                     continue;
@@ -168,8 +167,7 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         let mut visited = vec![false; self.n];
         self.que.clear();
         self.que.push_back(s);
-        while !self.que.is_empty() {
-            let p = self.que.pop_front().unwrap();
+        while let Some(p) = self.que.pop_front() {
             visited[p] = true;
             for e in &self.g[p] {
                 if e.cap > Cap::zero() && !visited[e.to] {
