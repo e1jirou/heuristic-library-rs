@@ -1,4 +1,7 @@
-#[allow(unused)]
+use std::collections::VecDeque;
+
+use num_traits::{NumAssign, PrimInt};
+
 pub struct Edge<Cap> {
     pub from: usize,
     pub to: usize,
@@ -7,7 +10,7 @@ pub struct Edge<Cap> {
 }
 
 #[derive(Clone)]
-struct _Edge<Cap> {
+struct AdjEdge<Cap> {
     to: usize,
     rev: usize,
     cap: Cap,
@@ -16,21 +19,21 @@ struct _Edge<Cap> {
 pub struct MaxFlow<Cap> {
     n: usize,
     pos: Vec<(usize, usize)>,
-    g: Vec<Vec<_Edge<Cap>>>,
+    g: Vec<Vec<AdjEdge<Cap>>>,
     level: Vec<i32>,
     iter: Vec<usize>,
-    que: std::collections::VecDeque<usize>,
+    que: VecDeque<usize>,
 }
 
-impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
+impl<Cap: NumAssign + PrimInt> MaxFlow<Cap> {
     pub fn new(n: usize) -> Self {
-        Self {
+        MaxFlow {
             n,
             pos: Vec::new(),
             g: vec![vec![]; n],
             level: Vec::new(),
             iter: Vec::new(),
-            que: std::collections::VecDeque::new(),
+            que: VecDeque::new(),
         }
     }
 
@@ -45,12 +48,12 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         if from == to {
             to_id += 1;
         }
-        self.g[from].push(_Edge {
+        self.g[from].push(AdjEdge {
             to,
             rev: to_id,
             cap,
         });
-        self.g[to].push(_Edge {
+        self.g[to].push(AdjEdge {
             to: from,
             rev: from_id,
             cap: Cap::zero(),
@@ -142,28 +145,32 @@ impl<Cap: num_traits::NumAssign + num_traits::PrimInt> MaxFlow<Cap> {
         }
         let mut res = Cap::zero();
         let level_v = self.level[v];
-        for i in self.iter[v]..self.g[v].len() {
-            self.iter[v] = i;
+        while self.iter[v] < self.g[v].len() {
+            let i = self.iter[v];
             let e = self.g[v][i].clone();
             if level_v <= self.level[e.to] || self.g[e.to][e.rev].cap == Cap::zero() {
+                self.iter[v] = i + 1;
                 continue;
             }
             let d = self.dfs(e.to, (up - res).min(self.g[e.to][e.rev].cap), s);
             if d <= Cap::zero() {
+                self.iter[v] = i + 1;
                 continue;
             }
-            self.g[v][i].cap = d;
+            self.g[v][i].cap += d;
             self.g[e.to][e.rev].cap -= d;
             res += d;
             if res == up {
                 return res;
             }
+            self.iter[v] = i + 1;
         }
         self.level[v] = self.n as i32;
         res
     }
 
     pub fn min_cut(&mut self, s: usize) -> Vec<bool> {
+        debug_assert!(s < self.n);
         let mut visited = vec![false; self.n];
         self.que.clear();
         self.que.push_back(s);
