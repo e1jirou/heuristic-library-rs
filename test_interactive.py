@@ -95,6 +95,8 @@ def task(seed, in_path, out_path):
         if SCORE_TEXT in out:
             ret.score = int(out.split(SCORE_TEXT)[1])
             break
+        else:
+            print(out)
     else:
         print("WARNING: Cannot Find Score")
 
