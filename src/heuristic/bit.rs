@@ -25,3 +25,66 @@ pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Op
     *x ^= T::one() << ret as usize;
     Some(ret)
 }
+
+#[inline(always)]
+fn select128(b: u128, i: usize) -> usize {
+    debug_assert!(i < b.count_ones() as usize);
+    let low64 = b as u64;
+    let low64_cnt = low64.count_ones() as usize;
+    if i < low64_cnt {
+        select64(low64, i)
+    } else {
+        let high64 = (b >> 64) as u64;
+        select64(high64, i - low64_cnt) + 64
+    }
+}
+
+#[inline(always)]
+fn select64(b: u64, i: usize) -> usize {
+    // TODO: use _pdep_u64 when targeting x86_64
+    debug_assert!(i < b.count_ones() as usize);
+    let low32 = b as u32;
+    let low32_cnt = low32.count_ones() as usize;
+    if i < low32_cnt {
+        select32(low32, i)
+    } else {
+        let high32 = (b >> 32) as u32;
+        select32(high32, i - low32_cnt) + 32
+    }
+}
+
+#[inline(always)]
+fn select32(mut b: u32, i: usize) -> usize {
+    debug_assert!(i < b.count_ones() as usize);
+    for _ in 0..i {
+        b &= b - 1;
+    }
+    b.trailing_zeros() as usize
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_select32() {
+        // 0b00010010_00000001_00000000_00000001 = 0x12010001
+        let b: u32 = 0b00010010_00000001_00000000_00000001;
+        let ones: Vec<usize> = (0..32).filter(|&k| (b & (1 << k)) != 0).collect();
+        for (i, &pos) in ones.iter().enumerate() {
+            assert_eq!(select32(b, i), pos);
+        }
+
+        // 全ビット立っている場合
+        let b: u32 = !0;
+        for i in 0..32 {
+            assert_eq!(select32(b, i), i);
+        }
+
+        // 1ビットのみ
+        for k in 0..32 {
+            let b = 1u32 << k;
+            assert_eq!(select32(b, 0), k);
+        }
+    }
+}
