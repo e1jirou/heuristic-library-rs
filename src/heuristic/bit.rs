@@ -27,7 +27,7 @@ pub fn pop_one<T: num_traits::PrimInt + std::ops::BitXorAssign>(x: &mut T) -> Op
 }
 
 #[inline(always)]
-fn select128(b: u128, i: usize) -> usize {
+pub fn select128(b: u128, i: usize) -> usize {
     debug_assert!(i < b.count_ones() as usize);
     let low64 = b as u64;
     let low64_cnt = low64.count_ones() as usize;
@@ -39,9 +39,16 @@ fn select128(b: u128, i: usize) -> usize {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
-fn select64(b: u64, i: usize) -> usize {
-    // TODO: use _pdep_u64 when targeting x86_64
+pub fn select64(b: u64, i: usize) -> usize {
+    debug_assert!(i < b.count_ones() as usize);
+    unsafe { std::arch::x86_64::_pdep_u64(1 << i, b) }.trailing_zeros() as usize
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+#[inline(always)]
+pub fn select64(b: u64, i: usize) -> usize {
     debug_assert!(i < b.count_ones() as usize);
     let low32 = b as u32;
     let low32_cnt = low32.count_ones() as usize;
@@ -54,7 +61,7 @@ fn select64(b: u64, i: usize) -> usize {
 }
 
 #[inline(always)]
-fn select32(mut b: u32, i: usize) -> usize {
+pub fn select32(mut b: u32, i: usize) -> usize {
     debug_assert!(i < b.count_ones() as usize);
     for _ in 0..i {
         b &= b - 1;
@@ -85,6 +92,39 @@ mod tests {
         for k in 0..32 {
             let b = 1u32 << k;
             assert_eq!(select32(b, 0), k);
+        }
+    }
+
+    #[test]
+    fn test_select64() {
+        // On x86_64, select64 uses the BMI2 `pdep` instruction.
+        // If the CPU doesn't support BMI2, executing it can trap.
+        #[cfg(target_arch = "x86_64")]
+        {
+            if !std::is_x86_feature_detected!("bmi2") {
+                return;
+            }
+        }
+
+        // Specific bit pattern
+        // 0b0001_0010_0000_0001_0000_0000_0000_0001 (low 32)
+        // and some bits in the high 32.
+        let b: u64 = 0x0000_0000_1201_0001u64 | (1u64 << 40) | (1u64 << 63) | (1u64 << 33);
+        let ones: Vec<usize> = (0..64).filter(|&k| (b & (1u64 << k)) != 0).collect();
+        for (i, &pos) in ones.iter().enumerate() {
+            assert_eq!(select64(b, i), pos);
+        }
+
+        // All bits set
+        let b: u64 = !0;
+        for i in 0..64 {
+            assert_eq!(select64(b, i), i);
+        }
+
+        // Single bit set
+        for k in 0..64 {
+            let b = 1u64 << k;
+            assert_eq!(select64(b, 0), k);
         }
     }
 }
