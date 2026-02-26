@@ -57,6 +57,12 @@ impl XorShift32 {
     }
 
     #[inline(always)]
+    pub fn gen_bool(&mut self, p: f64) -> bool {
+        debug_assert!(p >= 0.0 && p <= 1.0);
+        self.gen_f64() < p
+    }
+
+    #[inline(always)]
     pub fn shuffle<T>(&mut self, v: &mut [T]) {
         let n = v.len();
         for i in (1..n).rev() {
@@ -73,5 +79,10 @@ impl XorShift32 {
             let j = self.gen_range(i, m);
             v.swap(i, j);
         }
+    }
+
+    #[inline(always)]
+    pub fn choose<T: Copy>(&mut self, v: &[T]) -> T {
+        v[self.gen_range(0, v.len())]
     }
 }
