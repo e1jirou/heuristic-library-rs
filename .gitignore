@@ -4,3 +4,4 @@ tools/out/
 Cargo.lock
 **out.svg
 **vis.html
+.DS_Store
