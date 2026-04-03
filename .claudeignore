@@ -1,0 +1,9 @@
+target/
+tools/in/
+tools/out/
+Cargo.lock
+**out.svg
+**vis.html
+.DS_Store
+data/
+index.html
