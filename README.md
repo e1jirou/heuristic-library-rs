@@ -1,18 +1,18 @@
 # Template for AHC
 ## Usage
 1. Place tools.
-1. Edit `src/main.rs`, `input.py`, and `data/result.csv`.
+1. Edit `src/main.rs`, `scripts/input.py`, and `data/result.csv`.
 1. Make `data/input.csv`.
     ```bash
-    python3 input.py
+    python3 scripts/input.py
     ```
 1. Execute the runner.
     ```bash
-    python3 test_interactive.py [solution name] | tee out.txt
+    python3 scripts/test_interactive.py [solution name] | tee out.txt
     ```
     or
     ``` bash
-    python3 test_non_interactive.py [solution name] | tee out.txt
+    python3 scripts/test_non_interactive.py [solution name] | tee out.txt
     ```
 1. Start a simple HTTP server.
     ```bash

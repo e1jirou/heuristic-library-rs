@@ -20,7 +20,7 @@ AtCoder Heuristic Contest の問題を解くためのテンプレートリポジ
 
 複数のテストケースを並列実行:
 ```bash
-python3 test_non_interactive.py [solution_name]
+python3 scripts/test_non_interactive.py [solution_name]
 ```
 
 単一のテストケースを実行:
@@ -32,15 +32,15 @@ cargo run [--release] < tools/in/<case_number>.txt
 
 複数のテストケースを並列実行:
 ```bash
-python3 test_interactive.py [solution_name]
+python3 scripts/test_interactive.py [solution_name]
 ```
 
 単一のテストケースを実行 (debug):
 ```bash
-sh debug_interactive.sh < in/<case_number>.txt
+sh scripts/debug_interactive.sh < in/<case_number>.txt
 ```
 
 単一のテストケースを実行 (release):
 ```bash
-sh release_interactive.sh < in/<case_number>.txt
+sh scripts/release_interactive.sh < in/<case_number>.txt
 ```
