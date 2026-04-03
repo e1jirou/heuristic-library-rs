@@ -1,7 +1,17 @@
+# Build artifacts
 target/
+Cargo.lock
+
+# Test I/O
 tools/in/
 tools/out/
-Cargo.lock
+
+# Visualizer outputs
 **out.svg
 **vis.html
+
+# Problem files
+problem.html
+
+# OS
 .DS_Store

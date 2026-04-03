@@ -1,9 +1,24 @@
+# Build artifacts
 target/
+Cargo.lock
+
+# Test I/O
 tools/in/
 tools/out/
-Cargo.lock
+tools/seeds.txt
+
+# Visualizer outputs
 **out.svg
 **vis.html
+
+# Problem files
+problem.html
+
+# OS
 .DS_Store
+
+# Data files (large CSVs, not needed for coding)
 data/
+
+# Visualizer HTML
 index.html
