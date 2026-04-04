@@ -22,6 +22,15 @@ impl XorShift32 {
         x
     }
 
+    /// 1..=u64::MAX
+    /// Note: Both high and low 32-bit parts are in range 1..=u32::MAX
+    #[inline(always)]
+    pub fn gen_u64(&mut self) -> u64 {
+        let high = self.gen_u32() as u64;
+        let low = self.gen_u32() as u64;
+        (high << 32) | low
+    }
+
     /// 0.0..=1.0
     #[inline(always)]
     pub fn gen_f32(&mut self) -> f32 {
