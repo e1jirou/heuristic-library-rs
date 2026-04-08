@@ -1,3 +1,4 @@
+#[inline(always)]
 pub fn bit_set<T: num_traits::PrimInt + std::ops::BitOrAssign>(x: &mut T, p: usize) -> bool {
     let y = T::one() << p;
     if (*x & y) == T::zero() {
@@ -8,6 +9,7 @@ pub fn bit_set<T: num_traits::PrimInt + std::ops::BitOrAssign>(x: &mut T, p: usi
     }
 }
 
+#[inline(always)]
 pub fn bit_get<T: num_traits::PrimInt>(x: T, p: usize) -> bool {
     (x & (T::one() << p)) != T::zero()
 }

@@ -5,7 +5,7 @@ macro_rules! make_bitset {
     };
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct StaticBitSet<const N: usize, const ARRAY_SIZE: usize> {
     data: [u64; ARRAY_SIZE],
 }
