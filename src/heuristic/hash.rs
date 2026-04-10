@@ -1,4 +1,4 @@
-use std::{collections::HashSet, hash::{BuildHasherDefault, Hasher}};
+use std::{collections::{HashMap, HashSet}, hash::{BuildHasherDefault, Hasher}};
 
 #[derive(Default)]
 pub struct NoHashHasher {
@@ -15,7 +15,8 @@ impl Hasher for NoHashHasher {
     }
 }
 
-pub type NoHashSet = HashSet<u64, BuildHasherDefault<NoHashHasher>>;
+pub type NoHashSet<T> = HashSet<T, BuildHasherDefault<NoHashHasher>>;
+pub type NoHashMap<K, V> = HashMap<K, V, BuildHasherDefault<NoHashHasher>>;
 
 
 pub fn xorshift64(mut x: u64) -> u64 {
