@@ -11,7 +11,7 @@ AtCoder Heuristic Contest の問題を解くためのテンプレートリポジ
 
 - `CLAUDE.md` と terminal の出力では日本語を使用すること。
 - コードのコメントは英語で書くこと。
-- Rust ファイルを編集したら、必ず `cargo fmt` を実行すること。
+- Rust ファイルを編集したら、必ず `cargo check` と `cargo fmt` を実行すること。
 - 実装する前に実装内容を terminal に出力して確認すること。
 
 ## 実装のガイドライン
