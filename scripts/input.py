@@ -2,6 +2,8 @@ DATA_DIR = "data"
 
 IN_DIR = "tools/in"
 
+NUM_CASES = 1000
+
 FEATURE_VALUES = ["n", "m"] # TODO
 
 
@@ -23,7 +25,7 @@ def main():
         os.mkdir(DATA_DIR)
 
     inputs = []
-    for file_name in sorted(os.listdir(IN_DIR)):
+    for file_name in sorted(os.listdir(IN_DIR))[:NUM_CASES]:
         input = Input()
         input.read_input(file_name)
         inputs.append(input)
