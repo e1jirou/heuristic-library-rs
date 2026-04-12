@@ -114,9 +114,22 @@
 			if (headers.length >= 3) {
 				vis = headers[2];
 			}
+			// Calculate the maximum score length to handle incomplete rows
+			const maxScoreLength = lines.slice(1).reduce((max, line) => {
+				const values = line.split(',');
+				return Math.max(max, values.length - 1);
+			}, 0);
 			result = lines.slice(1).map(line => {
 				const values = line.split(',');
-				const rowObj = { name: values[0], rank: 0, scores: values.slice(1).map(v => parseInt(v, 10)) };
+				const scores = [];
+				for (let i = 0; i < maxScoreLength; i++) {
+					if (i + 1 < values.length) {
+						scores.push(parseInt(values[i + 1], 10));
+					} else {
+						scores.push(-1); // Fill missing columns with -1
+					}
+				}
+				const rowObj = { name: values[0], rank: 0, scores: scores };
 				return rowObj;
 			});
 			const n = result[0].scores.length;
