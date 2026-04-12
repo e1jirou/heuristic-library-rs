@@ -1,3 +1,6 @@
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 type Cost = i32;
 type Hash = u64;
 type CandidateIndex = u32;
@@ -507,6 +510,16 @@ impl Tree {
             self.nodes[v as usize].active = false;
             v = child;
             self.state.move_forward(&self.nodes[child as usize].action);
+
+            #[cfg(target_arch = "x86_64")]
+            unsafe {
+                // prefetch the right sibling
+                let right = self.nodes[child as usize].right;
+                if right != !0 {
+                    let ptr = self.nodes.data.as_ptr().add(right as usize);
+                    _mm_prefetch(ptr as *const i8, _MM_HINT_T0);
+                }
+            }
             child = self.nodes[child as usize].child;
         }
         debug_assert!(self.nodes[v as usize].active);
