@@ -133,3 +133,104 @@ pub fn decode4(abcd: usize, bw: usize, cw: usize, dw: usize) -> (usize, usize, u
     let d = abcd & ((1 << dw) - 1);
     (a, b, c, d)
 }
+
+#[inline(always)]
+pub fn next_permutation<T: Ord>(v: &mut [T]) -> bool {
+    // Find the largest index i such that v[i] < v[i+1]
+    let mut i = match v.len().checked_sub(2) {
+        None => return false,
+        Some(x) => x,
+    };
+    loop {
+        if v[i] < v[i + 1] {
+            break;
+        }
+        if i == 0 {
+            return false;
+        }
+        i -= 1;
+    }
+    // Find the largest index j > i such that v[i] < v[j]
+    let mut j = v.len() - 1;
+    while v[i] >= v[j] {
+        j -= 1;
+    }
+    // Swap v[i] and v[j]
+    v.swap(i, j);
+
+    // Reverse the suffix starting at v[i+1]
+    v[i + 1..].reverse();
+
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_next_permutation_basic() {
+        let mut v = vec![1, 2, 3];
+        assert!(next_permutation(&mut v));
+        assert_eq!(v, vec![1, 3, 2]);
+    }
+
+    #[test]
+    fn test_next_permutation_sequence() {
+        let mut v = vec![1, 2, 3];
+        let mut perms = vec![v.clone()];
+        while next_permutation(&mut v) {
+            perms.push(v.clone());
+        }
+        assert_eq!(
+            perms,
+            vec![
+                vec![1, 2, 3],
+                vec![1, 3, 2],
+                vec![2, 1, 3],
+                vec![2, 3, 1],
+                vec![3, 1, 2],
+                vec![3, 2, 1],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_next_permutation_last() {
+        let mut v = vec![3, 2, 1];
+        assert!(!next_permutation(&mut v));
+        assert_eq!(v, vec![3, 2, 1]);
+    }
+
+    #[test]
+    fn test_next_permutation_single() {
+        let mut v = vec![1];
+        assert!(!next_permutation(&mut v));
+    }
+
+    #[test]
+    fn test_next_permutation_empty() {
+        let mut v: Vec<i32> = vec![];
+        assert!(!next_permutation(&mut v));
+    }
+
+    #[test]
+    fn test_next_permutation_two_elements() {
+        let mut v = vec![1, 2];
+        assert!(next_permutation(&mut v));
+        assert_eq!(v, vec![2, 1]);
+        assert!(!next_permutation(&mut v));
+    }
+
+    #[test]
+    fn test_next_permutation_with_duplicates() {
+        let mut v = vec![1, 2, 2, 3];
+        let mut count = 0;
+        while next_permutation(&mut v) {
+            count += 1;
+        }
+        // Note: with duplicates, we generate permutations in lexicographic order
+        // but they may not all be unique
+        assert!(count > 0);
+    }
+}
