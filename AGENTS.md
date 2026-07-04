@@ -13,7 +13,7 @@ Here, "solution program" refers to any program created or being created for the 
 
 Compiling the solution program, and giving advice based on execution results, logs, scores, or similar information provided by the user, are not included in the prohibited actions above.
 
-# CLAUDE.md
+# AGENTS.md
 
 AtCoder Heuristic Contest XXX の問題を解くためのリポジトリです。
 
@@ -25,11 +25,11 @@ AtCoder Heuristic Contest XXX の問題を解くためのリポジトリです�
 
 ## リポジトリのメンテナンスルール
 
-- `CLAUDE.md` と terminal の出力では日本語を使用すること。
+- `AGENTS.md` と terminal の出力では日本語を使用すること。
 - コードのコメントは英語で書くこと。
 - Rust ファイルを編集したら、必ず `cargo fmt` と `cargo check` を実行すること。
-- 実装する前に実装内容を terminal に出力して確認すること。
-- アイディアはなるべく1つずつ実装して、動作を確認しながら進めること。
+- 実装する前に、チャットで実装内容を簡潔に説明して確認すること。
+- アイディアはなるべく1つずつ実装して、ユーザーから提供された実行結果を確認しながら進めること。
 - わからないことがあれば、すぐに質問すること。
 
 ## 実装のガイドライン
