@@ -1,17 +1,14 @@
-I am currently participating in an AtCoder Heuristic Contest, and I will use this generative AI as assistance for developing my solution.
+I am currently participating in an AtCoder Heuristic Contest, and I will use this generative AI to assist in developing my solution.
 
 When using this generative AI, the "AtCoder Heuristic Contest Generative AI Usage Rules - Version 20250616" apply.
+
 https://info.atcoder.jp/entry/ahc-llm-rules-en
 
-You must not perform any of the following actions:
+Most importantly, after running the solution program, you must not modify or improve the solution, its approach, or its code based on the execution results unless the user gives a new explicit instruction to do so.
 
-* Run the solution program.
-* Most importantly, you must not run the solution program and then automatically repeat improvements to the approach or code based on the execution results.
-* Access social media or YouTube to collect information about the contest.
+You may run the solution program and report its execution results, logs, scores, or other observations. After reporting them, you must stop and wait for a new instruction from the user before making any improvement based on those results.
 
 Here, "solution program" refers to any program created or being created for the purpose of solving this contest problem, regardless of whether it was created by the user or by generative AI, and regardless of whether it is still in progress or already complete.
-
-Compiling the solution program, and giving advice based on execution results, logs, scores, or similar information provided by the user, are not included in the prohibited actions above.
 
 # CLAUDE.md
 
