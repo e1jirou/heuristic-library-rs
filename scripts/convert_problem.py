@@ -1,8 +1,37 @@
+import argparse
 import html as html_module
 import re
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Optional
+
+
+def extract_limits(text: str) -> Optional[str]:
+    match = re.search(
+        r"実行時間制限\s*:\s*(.*?)\s*/\s*"
+        r"メモリ制限\s*:\s*(.*?)\s*</p\s*>",
+        text,
+        flags=re.S | re.I,
+    )
+    if not match:
+        return None
+
+    values = []
+    for value in match.groups():
+        value = re.sub(r"<[^>]*>", "", value)
+        value = html_module.unescape(value)
+        values.append(re.sub(r"\s+", " ", value).strip())
+
+    return f"実行時間制限: {values[0]} / メモリ制限: {values[1]}"
+
+
+def insert_limits_after_title(md: str, limits: str) -> str:
+    return re.sub(
+        r"^(# [^\n]+\n)",
+        lambda match: f"{match.group(1)}\n{limits}\n",
+        md,
+        count=1,
+    )
 
 
 class MDConverter(HTMLParser):
@@ -232,10 +261,27 @@ class MDConverter(HTMLParser):
 
 
 def main() -> None:
-    src = Path("problem.html")
-    dst = Path("problem.md")
+    parser = argparse.ArgumentParser(description="AtCoder の問題 HTML を Markdown に変換します。")
+    parser.add_argument(
+        "src",
+        nargs="?",
+        type=Path,
+        default=Path("problem.html"),
+        help="入力 HTML ファイル（既定値: problem.html）",
+    )
+    parser.add_argument(
+        "dst",
+        nargs="?",
+        type=Path,
+        default=Path("problem.md"),
+        help="出力 Markdown ファイル（既定値: problem.md）",
+    )
+    args = parser.parse_args()
+    src = args.src
+    dst = args.dst
 
     text = src.read_text(encoding="utf-8", errors="replace")
+    limits = extract_limits(text)
 
     m = re.search(
         r'<span class="lang-ja">(.*?)</span>\s*<span class="lang-en">',
@@ -264,6 +310,9 @@ def main() -> None:
 
     if not md.startswith("# "):
         md = "# A - Multi-Player Territory Game\n\n" + md
+
+    if limits is not None:
+        md = insert_limits_after_title(md, limits)
 
     dst.write_text(md, encoding="utf-8")
     print(f"Wrote {dst} ({len(md.splitlines())} lines)")
