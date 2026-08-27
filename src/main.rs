@@ -28,6 +28,8 @@ fn read_input() -> Input {
     }
 }
 
+// The following is a library published at https://github.com/e1jirou/heuristic-library-rs.
+
 pub trait ChangeMinMax {
     fn chmin(&mut self, x: Self) -> bool;
     fn chmax(&mut self, x: Self) -> bool;
